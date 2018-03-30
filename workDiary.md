@@ -76,26 +76,6 @@ Java Socket实现信息共享 - 聊天室
 
 2018/3/29    星期四  晴
 
-### socket长连接与短连接
-
-```java
-
-
-
-
-```
-
-### IO流
-
-```java
-
-
-
-
-```
-
-
-
 ### Git与Github的连接与使用
 
 ```doc
@@ -129,4 +109,65 @@ git push -u origin master    //关联后,第一次推送master分支的所有内
 
 
 ```
+
+## Exception
+
+```doc
+1.java.io.IOException: 文件名、目录名或卷标语法不正确。
+解决：文件命名有问题。
+
+Windows 中文件夹命名规则是： 
+① 文件名或文件夹名可以由1～256个西文字符或128个汉字（包括空格）组成，不能多于256个字符。 
+② 文件名可以有扩展名，也可以没有。有些情况下系统会为文件自动添加扩展名。一般情况下，文件名与扩展名中间用符号“.”分隔。 
+③ 文件名和文件夹名可以由字母、数字、汉字或~、!、@、#、$、%、^、&、( )、_、-、{}、’等组合而成。 
+④ 可以有空格，可以有多于一个的圆点。 
+⑤ 文件名或文件夹名中不能出现以下字符：\、/、:、*、?、"、<、>、| 。 
+⑥ 不区分英文字母大小写。 
+
+
+
+```
+
+
+
+2018/3/30   星期五  阴
+
+### java  获取tomcat下目录
+
+```doc
+
+String path = request.getSession().getServletContext().getRealPath("/"); 
+			// path:D:\Arvin\AreaCode\.metadata\.plugins\org.eclipse.wst.server.core\tmp1\wtpwebapps\IHAD-master\
+			String headSculpturePath = request.getSession().getServletContext().getRealPath("/upload")+"/";
+			// D:\Arvin\AreaCode\.metadata\.plugins\org.eclipse.wst.server.core\tmp1\wtpwebapps\IHAD-master\upload/
+			String nodepath = this.getClass().getClassLoader().getResource("/").getPath();  
+			// nodepath:/D:/Arvin/AreaCode/.metadata/.plugins/org.eclipse.wst.server.core/tmp1/wtpwebapps/IHAD-master/WEB-INF/classes/
+			//String temporaryDirectory = request.getSession().getServletContext().getRealPath("/WEB-INF/upload/temporary_directory/" +"pengyue"+uuid+sdfn.format(new Date()));
+```
+
+
+
+
+
+
+
+### socket长连接与短连接
+
+```java
+
+```
+
+### IO流
+
+```java
+
+```
+
+### ActiveMQ
+
+```doc
+
+```
+
+
 
