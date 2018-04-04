@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ahhf.ljxbw.entity.ResultCode;
 import com.ahhf.ljxbw.entity.ResultData;
+import com.ahhf.ljxbw.entity.UserlogininfoEntity;
+import com.ahhf.ljxbw.service.UserlogininfoService;
 import com.ahhf.ljxbw.utils.BodyJsonInitFactory;
 
 import ch.qos.logback.classic.Logger;
@@ -26,26 +29,30 @@ import net.sf.json.JSONObject;
 @Controller
 @RequestMapping(value="/user")
 public class UserController {
+	@Autowired
+	private UserlogininfoService userlogininfoService;
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 	private Logger logger = (Logger) LoggerFactory.getLogger(UserController.class);
-	
-
 
 	@RequestMapping(value = "/login",method=RequestMethod.POST)
 	@ResponseBody
 	public ResultCode login(HttpServletRequest request, HttpServletResponse response) {
 		
 		String reqBody = BodyJsonInitFactory.obtainRequestBody(request);
-		logger.info("reqBody---" + reqBody);
+		logger.info("/user/login--requestBody---" + reqBody);
 		JSONObject json = JSONObject.fromObject(reqBody);
 		String name = json.getString("name");
 		String password = json.getString("pwd");
-		logger.info("user:" + name + "--" + "pwd" + password);
-		System.err.println();
+		if(name!=null&&!("").equals(name)&&password!=null &&!("").equals(password)) {
+			UserlogininfoEntity userlogininfo =new UserlogininfoEntity(name, password, 1, 1);
+			userlogininfoService.save(userlogininfo);
+			logger.info("/user/login--userlogininfoService.save(userlogininfo)"+userlogininfo.toString());
+		}
 		ResultCode rc = new ResultCode(new ResultData("4fgrrt5343dfdf",  "56576767"), 0, 0, "uploadImg", "", "");
+        JSONObject json2 = JSONObject.fromObject(rc);
+        logger.info("/user/login--responseBody----"+json2.toString());
 		return rc;
 	}
-	
 	
 	@RequestMapping(value = "/data")
 	@ResponseBody
