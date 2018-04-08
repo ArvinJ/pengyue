@@ -1,7 +1,6 @@
 package com.ahhf.ljxbw.entity;
 
 import java.io.Serializable;
-import java.util.Date;
 
 /**
  * 

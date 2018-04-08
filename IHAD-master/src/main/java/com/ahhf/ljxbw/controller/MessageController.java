@@ -22,10 +22,14 @@ import com.ahhf.ljxbw.entity.ComputerstatisicsEntity;
 import com.ahhf.ljxbw.entity.RecordEntity;
 import com.ahhf.ljxbw.entity.ResultCode;
 import com.ahhf.ljxbw.entity.ResultData;
+import com.ahhf.ljxbw.entity.UserInfoEntity;
 import com.ahhf.ljxbw.service.ComputerstatisicsService;
 import com.ahhf.ljxbw.service.RecordService;
+import com.ahhf.ljxbw.service.UserInfoService;
 import com.ahhf.ljxbw.utils.BodyJsonInitFactory;
+import com.alibaba.druid.support.logging.Log;
 
+import ch.qos.logback.classic.Logger;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -47,10 +51,13 @@ public class MessageController extends BaseController{
 	private RecordService recordService;
 	@Autowired
 	private ComputerstatisicsService computerstatisicsService;
-	
+	@Autowired
+	private UserInfoService userInfoService;
 	
 	
 	/**
+	 * @throws IOException 
+	 * @throws UnsupportedEncodingException 
 	 * 
 	 * @Title: commitInfo   
 	 * @Description: TODO(获取场所服务端发送到云端的数据)   
@@ -63,15 +70,19 @@ public class MessageController extends BaseController{
 	 
 	@RequestMapping(value = "/Info", method = RequestMethod.POST)
 	@ResponseBody
-	public ResultCode commitInfo(HttpServletRequest request, HttpServletResponse response) {
-		String requestBody = BodyJsonInitFactory.obtainRequestBody(request);
+	public ResultCode commitInfo(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String requestBody = BodyJsonInitFactory.getPostParameter(request);
 		logger.info("/message/Info---requestBody---" + requestBody);
 		String title = request.getParameter("a");
+		logger.info("title---"+title);
 		if (title != null && !title.equals("")) {
 			JSONObject json = JSONObject.fromObject(requestBody);
 			switch (title) {
 			case "addWarning":
 				logger.info(title + "-提交报警");
+				
+				
+				
 				break;
 			case "upload":
 				logger.info(title + "-上传截图");
@@ -159,16 +170,22 @@ public class MessageController extends BaseController{
 				
 				break;
 			case "openCard":
+				
 				logger.info(title + "-开卡-"+json.toString());
+				saveUserInfo(1,json);
+				
 				break;
 			case "closeCard":
 				logger.info(title + "-退卡-"+json.toString());
+				saveUserInfo(2,json);
 				break;
 			case "operate":
 				logger.info(title + "-上机- "+json.toString());
+				saveUserInfo(3,json);
 				break;
 			case "deplane":
 				logger.info(title + "-下机- "+json.toString());
+				saveUserInfo(4,json);
 				break;
 			default:
 				logger.info("a值的信息-" + title);
@@ -239,6 +256,20 @@ public class MessageController extends BaseController{
 		logger.info("titleValue:" + titleValue + "--ipValue:" + ipValue + "--tokenValue" + tokenValue);
 		ResultCode rc = new ResultCode(new ResultData("4fgrrt5343dfdf", "56576767"), 0, 0, "uploadImg", "", "");
 		return rc;
+	}
+	public  void saveUserInfo(int  type ,JSONObject json) {
+		// type 1 开卡，2退卡，3上机，4下机  
+
+		String no = json.getString("no");
+		Integer cardtype = Integer.parseInt(json.getString("cardtype"));
+		String cardno = json.getString("cardno");
+		String name = json.getString("name");
+		//String t = json.getString("t");
+		String ip = json.getString("ip");
+		UserInfoEntity userInfoEntity = new UserInfoEntity(no, cardtype, cardno, name, ip, 1, type, sdf.format(new Date()));
+		logger.info("UserInfoEntity---"+userInfoEntity.toString());
+		userInfoService.save(userInfoEntity);
+		
 	}
 
 }

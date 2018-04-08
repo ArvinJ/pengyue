@@ -5,7 +5,7 @@ import java.util.Map;
 
 public interface BaseDao<T> {
 	T queryObject(Integer id);
-
+	List<T> selectAllObject();
 	List<T> queryList(Map<String, Object> map);
 
 	int queryTotal(Map<String, Object> map);

@@ -1,6 +1,9 @@
 package com.ahhf.ljxbw.controller;
 
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -27,9 +30,9 @@ public class UserController extends BaseController{
 
 	@RequestMapping(value = "/login",method=RequestMethod.POST)
 	@ResponseBody
-	public ResultCode login(HttpServletRequest request, HttpServletResponse response) {
+	public ResultCode login(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		
-		String reqBody = BodyJsonInitFactory.obtainRequestBody(request);
+		String reqBody = BodyJsonInitFactory.getPostParameter(request);
 		logger.info("/user/login--requestBody---" + reqBody);
 		JSONObject json = JSONObject.fromObject(reqBody);
 		String name = json.getString("name");

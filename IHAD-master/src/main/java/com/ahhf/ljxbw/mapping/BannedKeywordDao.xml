@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ahhf.ljxbw.dao.BannedKeywordDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="com.ahhf.ljxbw.entity.BannedKeywordEntity" id="bannedKeywordMap">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="wtype" column="wtype"/>
+        <result property="wid" column="wid"/>
+        <result property="holdup" column="holdup"/>
+    </resultMap>
+
+	<select id="queryObject" resultType="com.ahhf.ljxbw.entity.BannedKeywordEntity">
+		select * from t_banned_keyword where id = #{value}
+	</select>
+	<select id="selectAllObject" resultType="com.ahhf.ljxbw.entity.BannedKeywordEntity">
+		select * from t_banned_keyword
+	</select>
+	
+
+	<select id="queryList" resultType="com.ahhf.ljxbw.entity.BannedKeywordEntity">
+		select * from t_banned_keyword
+        <choose>
+            <when test="sidx != null and sidx.trim() != ''">
+                order by ${sidx} ${order}
+            </when>
+			<otherwise>
+                order by id desc
+			</otherwise>
+        </choose>
+		<if test="offset != null and limit != null">
+			limit #{offset}, #{limit}
+		</if>
+	</select>
+	
+ 	<select id="queryTotal" resultType="int">
+		select count(*) from t_banned_keyword 
+	</select>
+	 
+	<insert id="save" parameterType="com.ahhf.ljxbw.entity.BannedKeywordEntity" useGeneratedKeys="true" keyProperty="id">
+		insert into t_banned_keyword
+		(
+			`name`, 
+			`wtype`, 
+			`wid`, 
+			`holdup`
+
+		)
+		values
+		(
+			#{name}, 
+			#{wtype}, 
+			#{wid}, 
+			#{holdup}
+
+		)
+	</insert>
+	 
+	<update id="update" parameterType="com.ahhf.ljxbw.entity.BannedKeywordEntity">
+		update t_banned_keyword 
+		<set>
+			<if test="name != null">`name` = #{name}, </if>
+			<if test="wtype != null">`wtype` = #{wtype}, </if>
+			<if test="wid != null">`wid` = #{wid}, </if>
+			<if test="holdup != null">`holdup` = #{holdup} </if>
+		</set>
+		where id = #{id}
+	</update>
+	
+	<delete id="delete">
+		delete from t_banned_keyword where id = #{value}
+	</delete>
+	
+	<delete id="deleteBatch">
+		delete from t_banned_keyword where id in 
+		<foreach item="id" collection="array" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+
+</mapper>

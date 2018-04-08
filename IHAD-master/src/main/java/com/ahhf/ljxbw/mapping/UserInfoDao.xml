@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ahhf.ljxbw.dao.UserInfoDao">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="com.ahhf.ljxbw.entity.UserInfoEntity" id="userInfoMap">
+        <result property="id" column="id"/>
+        <result property="no" column="no"/>
+        <result property="cardtype" column="cardtype"/>
+        <result property="cardno" column="cardno"/>
+        <result property="name" column="name"/>
+        <result property="ip" column="ip"/>
+        <result property="status" column="status"/>
+        <result property="type" column="type"/>
+        <result property="t" column="t"/>
+    </resultMap>
+
+	<select id="queryObject" resultType="com.ahhf.ljxbw.entity.UserInfoEntity">
+		select * from t_user_info where id = #{value}
+	</select>
+
+	<select id="queryList" resultType="com.ahhf.ljxbw.entity.UserInfoEntity">
+		select * from t_user_info
+        <choose>
+            <when test="sidx != null and sidx.trim() != ''">
+                order by ${sidx} ${order}
+            </when>
+			<otherwise>
+                order by id desc
+			</otherwise>
+        </choose>
+		<if test="offset != null and limit != null">
+			limit #{offset}, #{limit}
+		</if>
+	</select>
+	
+ 	<select id="queryTotal" resultType="int">
+		select count(*) from t_user_info 
+	</select>
+	 
+	<insert id="save" parameterType="com.ahhf.ljxbw.entity.UserInfoEntity" useGeneratedKeys="true" keyProperty="id">
+		insert into t_user_info
+		(
+			`no`, 
+			`cardtype`, 
+			`cardno`, 
+			`name`, 
+			`ip`, 
+			`status`, 
+			`type`, 
+			`t`
+		)
+		values
+		(
+			#{no}, 
+			#{cardtype}, 
+			#{cardno}, 
+			#{name}, 
+			#{ip}, 
+			#{status}, 
+			#{type}, 
+			#{t}
+		)
+	</insert>
+	 
+	<update id="update" parameterType="com.ahhf.ljxbw.entity.UserInfoEntity">
+		update t_user_info 
+		<set>
+			<if test="no != null">`no` = #{no}, </if>
+			<if test="cardtype != null">`cardtype` = #{cardtype}, </if>
+			<if test="cardno != null">`cardno` = #{cardno}, </if>
+			<if test="name != null">`name` = #{name}, </if>
+			<if test="ip != null">`ip` = #{ip}, </if>
+			<if test="status != null">`status` = #{status}, </if>
+			<if test="type != null">`type` = #{type}, </if>
+			<if test="t != null">`t` = #{t}</if>
+		</set>
+		where id = #{id}
+	</update>
+	
+	<delete id="delete">
+		delete from t_user_info where id = #{value}
+	</delete>
+	
+	<delete id="deleteBatch">
+		delete from t_user_info where id in 
+		<foreach item="id" collection="array" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+
+</mapper>
