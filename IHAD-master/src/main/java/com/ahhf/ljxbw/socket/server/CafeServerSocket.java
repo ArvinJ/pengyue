@@ -1,4 +1,4 @@
-package com.ahhf.ljxbw.controller;
+package com.ahhf.ljxbw.socket.server;
 
 import java.io.BufferedReader;
 import java.io.IOException;

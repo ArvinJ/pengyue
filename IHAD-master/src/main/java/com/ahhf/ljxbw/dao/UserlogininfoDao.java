@@ -1,7 +1,5 @@
 package com.ahhf.ljxbw.dao;
 
-import java.util.List;
-import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 
@@ -15,9 +13,9 @@ import com.ahhf.ljxbw.entity.UserlogininfoEntity;
  * @date 2018-04-04 13:12:55
  */
 @Mapper
-public interface UserlogininfoDao {
+public interface UserlogininfoDao extends BaseDao<UserlogininfoEntity> {
 
-	UserlogininfoEntity queryObject(Integer id);
+	/*UserlogininfoEntity queryObject(Integer id);
 
 	List<UserlogininfoEntity> queryList(Map<String, Object> map);
 
@@ -29,6 +27,6 @@ public interface UserlogininfoDao {
 
 	void delete(Integer id);
 
-	void deleteBatch(Integer[] ids);
+	void deleteBatch(Integer[] ids);*/
 	
 }

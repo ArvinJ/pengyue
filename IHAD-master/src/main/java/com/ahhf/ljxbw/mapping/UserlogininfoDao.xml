@@ -8,7 +8,6 @@
         <result property="id" column="id"/>
         <result property="loginname" column="loginName"/>
         <result property="loginpwd" column="loginPwd"/>
-        <result property="createdatetime" column="createDateTime"/>
         <result property="status" column="status"/>
         <result property="type" column="type"/>
     </resultMap>
@@ -58,7 +57,6 @@
 		<set>
 			<if test="loginname != null">`loginName` = #{loginname}, </if>
 			<if test="loginpwd != null">`loginPwd` = #{loginpwd}, </if>
-			<if test="createdatetime != null">`createDateTime` = #{createdatetime}, </if>
 			<if test="status != null">`status` = #{status}, </if>
 			<if test="type != null">`type` = #{type}</if>
 		</set>

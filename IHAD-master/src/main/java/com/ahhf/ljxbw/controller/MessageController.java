@@ -12,17 +12,20 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.ahhf.ljxbw.entity.ComputerstatisicsEntity;
+import com.ahhf.ljxbw.entity.RecordEntity;
 import com.ahhf.ljxbw.entity.ResultCode;
 import com.ahhf.ljxbw.entity.ResultData;
+import com.ahhf.ljxbw.service.ComputerstatisicsService;
+import com.ahhf.ljxbw.service.RecordService;
 import com.ahhf.ljxbw.utils.BodyJsonInitFactory;
 
-import ch.qos.logback.classic.Logger;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -38,10 +41,15 @@ import net.sf.json.JSONObject;
  */
 @Controller
 @RequestMapping(value = "/message")
-public class MessageController {
-	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-	private Logger logger = (Logger) LoggerFactory.getLogger(MessageController.class);
-
+public class MessageController extends BaseController{
+	
+	@Autowired
+	private RecordService recordService;
+	@Autowired
+	private ComputerstatisicsService computerstatisicsService;
+	
+	
+	
 	/**
 	 * 
 	 * @Title: commitInfo   
@@ -60,6 +68,7 @@ public class MessageController {
 		logger.info("/message/Info---requestBody---" + requestBody);
 		String title = request.getParameter("a");
 		if (title != null && !title.equals("")) {
+			JSONObject json = JSONObject.fromObject(requestBody);
 			switch (title) {
 			case "addWarning":
 				logger.info(title + "-提交报警");
@@ -68,172 +77,98 @@ public class MessageController {
 				logger.info(title + "-上传截图");
 				break;
 			case "computerStatisics":
-				/**
-				 * {
-	"total": "15",
-	"list": [{
-		"ip": "192.168.88.1",
-		"install": "0",
-		"mac": "CC-34-29-2D-89-00",
-		"version": ""
-	}, {
-		"ip": "192.168.88.100",
-		"install": "0",
-		"mac": "00-24-81-C4-D0-2A",
-		"version": ""
-	}, {
-		"ip": "192.168.88.101",
-		"install": "0",
-		"mac": "80-18-44-E0-AC-70",
-		"version": ""
-	}, {
-		"ip": "192.168.88.102",
-		"install": "0",
-		"mac": "64-5A-04-CF-BB-90",
-		"version": ""
-	}, {
-		"ip": "192.168.88.106",
-		"install": "1",
-		"mac": "64-5A-04-CF-D5-E4",
-		"version": "2.2.1.8"
-	}, {
-		"ip": "192.168.88.107",
-		"install": "0",
-		"mac": "64-5A-04-CF-D9-88",
-		"version": ""
-	}, {
-		"ip": "192.168.88.110",
-		"install": "0",
-		"mac": "50-01-D9-C1-70-37",
-		"version": ""
-	}, {
-		"ip": "192.168.88.112",
-		"install": "0",
-		"mac": "64-5A-04-CF-65-6A",
-		"version": ""
-	}, {
-		"ip": "192.168.88.113",
-		"install": "0",
-		"mac": "0C-8F-FF-94-82-76",
-		"version": ""
-	}, {
-		"ip": "192.168.88.118",
-		"install": "0",
-		"mac": "34-17-EB-6B-F2-F2",
-		"version": ""
-	}, {
-		"ip": "192.168.88.121",
-		"install": "0",
-		"mac": "5C-F3-FC-20-FA-6A",
-		"version": ""
-	}, {
-		"ip": "192.168.88.122",
-		"install": "0",
-		"mac": "80-18-44-E0-C1-33",
-		"version": ""
-	}, {
-		"ip": "192.168.88.123",
-		"install": "0",
-		"mac": "5C-F3-FC-1C-90-5E",
-		"version": ""
-	}, {
-		"ip": "192.168.88.173",
-		"install": "0",
-		"mac": "34-17-EB-64-3B-E2",
-		"version": ""
-	}, {
-		"ip": "192.168.88.175",
-		"install": "0",
-		"mac": "00-0C-29-AE-B7-51",
-		"version": ""
-	}]
-}
-				 */
 				logger.info(title + "-上传计算机扫描结果");
+				JSONArray computerArray = null;
+				ComputerstatisicsEntity computerstatisics = null;
+				if (requestBody.indexOf("list") != -1) {
+					computerArray = json.getJSONArray("list");
+				}
+				if (computerArray != null) {
+					logger.info("computerArray--" + computerArray);
+					for (int i = 0; i < computerArray.size(); i++) {
+						
+						JSONObject subObject1 = (JSONObject) computerArray.get(i);
+						String ip = subObject1.getString("ip");
+						Integer install = 0;
+						try {
+							install = Integer.parseInt(subObject1.getString("install"));
+						} catch (NumberFormatException e) {
+							e.printStackTrace();
+						}
+						String mac = subObject1.getString("mac");
+						String version = subObject1.getString("version");
+						computerstatisics = new ComputerstatisicsEntity(ip, install, mac, version, 1);
+						computerstatisicsService.save(computerstatisics);
+					}
+
+				}
+				computerstatisicsService.save(computerstatisics);
+				
+				
 				break;
 			case "record":
-				/**
-				 * {
-	"url": [{
-		"ip": "192.168.88.106",
-		"t": "0",
-		"info": "info.pinyin.sogou.com"
-	}, {
-		"ip": "192.168.88.106",
-		"t": "0",
-		"info": "config.pinyin.sogou.com"
-	}],
-	"prog": [{
-		"ip": "192.168.88.106",
-		"t": "0",
-		"info": "SearchFilterHost.exe"
-	}, {
-		"ip": "192.168.88.106",
-		"t": "0",
-		"info": "SoftupNotify.exe"
-	}, {
-		"ip": "192.168.88.106",
-		"t": "0",
-		"info": "SGTool.exe"
-	}, {
-		"ip": "192.168.88.106",
-		"t": "0",
-		"info": "WmiApSrv.exe"
-	}, {
-		"ip": "192.168.88.106",
-		"t": "0",
-		"info": "WmiPrvSE.exe"
-	}, {
-		"ip": "192.168.88.106",
-		"t": "0",
-		"info": "SearchProtocolHost.exe"
-	}]
-}
-				 */
+
 				logger.info(title + "-上传记录的信息  ");
-				JSONObject json = JSONObject.fromObject(requestBody);
 				JSONArray urlArray = null;
 				JSONArray progArray = null;
+				// url : type=1;prog : type=2
 				if (requestBody.indexOf("url") != -1) {
 					urlArray = json.getJSONArray("url");
 				}
 				if (requestBody.indexOf("prog") != -1) {
 					progArray = json.getJSONArray("prog");
 				}
+				
+				RecordEntity record = null;
+				
 				if (urlArray != null) {
-					System.err.println("urlArray--" + urlArray);
+					logger.info("urlArray--" + urlArray);
 					for (int i = 0; i < urlArray.size(); i++) {
+						
 						JSONObject subObject1 = (JSONObject) urlArray.get(i);
 						String ip = subObject1.getString("ip");
-						String t = subObject1.getString("t");
+						Integer t =0;
+						try {
+							t = Integer.parseInt(subObject1.getString("t"));
+						} catch (NumberFormatException e) {
+							e.printStackTrace();
+						}
 						String info = subObject1.getString("info");
-						System.err.println("urlArray-----ip:" + ip + "--t：" + t + "--info：" + info);
+						record = new RecordEntity(ip, t, info, 1, 1);
+						recordService.save(record);
 					}
 
 				}
 				if (progArray != null) {
-					System.err.println("progArray--" + progArray);
+					logger.info("progArray--" + progArray);
 					for (int i = 0; i < progArray.size(); i++) {
 						JSONObject subObject2 = (JSONObject) progArray.get(i);
 						String ip = subObject2.getString("ip");
-						String t = subObject2.getString("t");
+						Integer t = 0;
+						try {
+							t = Integer.parseInt(subObject2.getString("t"));
+						} catch (NumberFormatException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 						String info = subObject2.getString("info");
-						System.err.println("progArray-----ip:" + ip + "--t：" + t + "--info：" + info);
+						record = new RecordEntity(ip, t, info, 1, 2);
+						recordService.save(record);
 					}
 				}
-
+				
 				break;
 			case "openCard":
-				logger.info(title + "开卡");
+				logger.info(title + "-开卡-"+json.toString());
 				break;
 			case "closeCard":
-				logger.info(title + "退卡");
+				logger.info(title + "-退卡-"+json.toString());
 				break;
 			case "operate":
-				logger.info(title + "上机 ");
+				logger.info(title + "-上机- "+json.toString());
 				break;
 			case "deplane":
-				logger.info(title + "下机 ");
+				logger.info(title + "-下机- "+json.toString());
 				break;
 			default:
 				logger.info("a值的信息-" + title);
