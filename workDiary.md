@@ -24,7 +24,26 @@ try {
 }
 ```
 
+#### 2.BeanUtils.copyProperties(A,B)字段复制
 
+```doc
+BeanUtils提供对Java反射和自省API的包装。其主要目的是利用反射机制对JavaBean的属性进行处理。我们知道，一个JavaBean通常包含了大量的属性，很多情况下，对JavaBean的处理导致大量get/set代码堆积，增加了代码长度和阅读代码的难度。
+
+ 注意：属性复制，不同jar中的方法，用法不一样。
+1、package org.springframework.beans;中的
+
+     BeanUtils.copyProperties(A,B);
+
+     是A中的值付给B
+
+2、package org.apache.commons.beanutils;（常用）
+
+      BeanUtils.copyProperties(A,B);
+
+      是B中的值付给A
+
+
+```
 
 
 
@@ -79,6 +98,82 @@ Object转换成JSON
   ResultCode rc = new ResultCode(new ResultData("4fgrrt5343dfdf",  "56576767"), 0, 0, "uploadImg", "", "");
         JSONObject json2 = JSONObject.fromObject(rc);
 ```
+
+
+
+
+
+
+
+## Linux
+
+### 1.Permission denied的解决办法
+
+```doc
+解决的办法：
+
+$ sudo chmod -R 777 myResources
+其中
+-R 是指级联应用到目录里的所有子目录和文件
+777 是所有用户都拥有最高权限
+
+查看当前开启的tomcat 进程
+ps -ef|grep tomcat
+
+杀死pid的进程
+kill -9   pid     #pid 为相应的进程号
+ kill -9 11209
+```
+
+### 2.查看linux是多少位操作系统
+
+```doc
+# getconf LONG_BIT
+```
+
+### 3.JDK版本不兼容
+
+```doc
+Unsupported major.minor version 52.0 (unable to load class com.servlet.MailSenderServlet)
+```
+
+### 4.实时查看tomcat日志
+
+```doc
+定位进入tomcat 的文件夹logs
+tail -f catalina.out
+```
+
+### 5.linux安装与卸载jdk
+
+```doc
+step1
+首先去官网下载一个.tar.gz后缀的jdk
+
+step2
+卸载当前低版本的,查看当前系统的jdk版本
+rpm -qa | grep gcj或者rpm -qa | grep jdk查看jdk的具体信息
+rpm -e --nodeps java-1.5.0-gcj-1.5.0.0-29.1.el6.x86_64命令卸载相应的jdk；
+
+step3
+定位到 jdk 文件 解压
+tar -zxvf jdk-8u131-linux-x64.tar.gz
+
+step4
+设置环境变量
+export JAVA_HOME=/root/server/jdk1.8/jdk1.8.0_172
+export CLASSPATH=.:$JAVA_HOME/jre/lib/rt.jar:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+export PATH=$JAVA_HOME/bin:$PATH
+echo $PATH
+java -version
+
+```
+
+
+
+
+
+
 
 
 
@@ -230,7 +325,6 @@ HTTP也可以建立长连接的，使用Connection:keep-alive,HTTP1.1默认进�
 2、关闭Socket，记得显式关闭流与socket,顺序是线管流再关socket.
 
 3、要实先长连接，一般需要发送结束标记符号来告诉客户端服务端的某段消息已经发送完毕，否则客户端会一直阻塞在read方法。
-
 
 ```
 
@@ -660,7 +754,6 @@ File<-----依赖----FileInputStream<---依赖---InputStreamReader<----继承---F
 (02) FileWriter继承于OutputStreamWriter，而OutputStreamWriter依赖于OutputStream。具体表现在OutputStreamWriter的构造函数是以OutputStream为参数。我们传入OutputStream，在OutputStreamWriter内部通过转码，将字节转换成字符。
 
 
-
 ```
 
 
@@ -756,7 +849,6 @@ public class MyStack<T> {
     }  
   
 }  
-
 
 ```
 
@@ -2858,9 +2950,908 @@ public void showKeyValue1(Generic<?> obj){
 
 
 
+## Java Socket 通信
+
+### 一、Socket通信基本示例
+
+```java
+package yiwangzhibujian.onlysend;
+
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+public class SocketServer {
+  public static void main(String[] args) throws Exception {
+    // 监听指定的端口
+    int port = 55533;
+    ServerSocket server = new ServerSocket(port);
+    
+    // server将一直等待连接的到来
+    System.out.println("server将一直等待连接的到来");
+    Socket socket = server.accept();
+    // 建立好连接后，从socket中获取输入流，并建立缓冲区进行读取
+    InputStream inputStream = socket.getInputStream();
+    byte[] bytes = new byte[1024];
+    int len;
+    StringBuilder sb = new StringBuilder();
+    while ((len = inputStream.read(bytes)) != -1) {
+      //注意指定编码格式，发送方和接收方一定要统一，建议使用UTF-8
+      sb.append(new String(bytes, 0, len,"UTF-8"));
+    }
+    System.out.println("get message from client: " + sb);
+    inputStream.close();
+    socket.close();
+    server.close();
+  }
+}
+```
+
+服务端监听一个端口，等待连接的到来。
+
+```java
+package yiwangzhibujian.onlysend;
+
+import java.io.OutputStream;
+import java.net.Socket;
+
+public class SocketClient {
+  public static void main(String args[]) throws Exception {
+    // 要连接的服务端IP地址和端口
+    String host = "127.0.0.1"; 
+    int port = 55533;
+    // 与服务端建立连接
+    Socket socket = new Socket(host, port);
+    // 建立连接后获得输出流
+    OutputStream outputStream = socket.getOutputStream();
+    String message="你好  yiwangzhibujian";
+    socket.getOutputStream().write(message.getBytes("UTF-8"));
+    outputStream.close();
+    socket.close();
+  }
+}
+```
+
+客户端通过ip和端口，连接到指定的server，然后通过Socket获得输出流，并向其输出内容，服务器会获得消息。
+
+```doc
+通过这个例子应该掌握并了解：
+
+Socket服务端和客户端的基本编程
+传输编码统一指定，防止乱码
+```
+
+### 二、消息通信优化
+
+#### 2.1 双向通信，发送消息并接受消息
+
+```java
+package yiwangzhibujian.waitreceive;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+public class SocketServer {
+  public static void main(String[] args) throws Exception {
+    // 监听指定的端口
+    int port = 55533;
+    ServerSocket server = new ServerSocket(port);
+    
+    // server将一直等待连接的到来
+    System.out.println("server将一直等待连接的到来");
+    Socket socket = server.accept();
+    // 建立好连接后，从socket中获取输入流，并建立缓冲区进行读取
+    InputStream inputStream = socket.getInputStream();
+    byte[] bytes = new byte[1024];
+    int len;
+    StringBuilder sb = new StringBuilder();
+    //只有当客户端关闭它的输出流的时候，服务端才能取得结尾的-1
+    while ((len = inputStream.read(bytes)) != -1) {
+      // 注意指定编码格式，发送方和接收方一定要统一，建议使用UTF-8
+      sb.append(new String(bytes, 0, len, "UTF-8"));
+    }
+    System.out.println("get message from client: " + sb);
+
+    OutputStream outputStream = socket.getOutputStream();
+    outputStream.write("Hello Client,I get the message.".getBytes("UTF-8"));
+
+    inputStream.close();
+    outputStream.close();
+    socket.close();
+    server.close();
+  }
+}
+```
+
+与之前server的不同在于，当读取完客户端的消息后，打开输出流，将指定消息发送回客户端，客户端程序为：
+
+```java
+package yiwangzhibujian.waitreceive;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+
+public class SocketClient {
+  public static void main(String args[]) throws Exception {
+    // 要连接的服务端IP地址和端口
+    String host = "127.0.0.1";
+    int port = 55533;
+    // 与服务端建立连接
+    Socket socket = new Socket(host, port);
+    // 建立连接后获得输出流
+    OutputStream outputStream = socket.getOutputStream();
+    String message = "你好  yiwangzhibujian";
+    socket.getOutputStream().write(message.getBytes("UTF-8"));
+    //通过shutdownOutput高速服务器已经发送完数据，后续只能接受数据
+    socket.shutdownOutput();
+    
+    InputStream inputStream = socket.getInputStream();
+    byte[] bytes = new byte[1024];
+    int len;
+    StringBuilder sb = new StringBuilder();
+    while ((len = inputStream.read(bytes)) != -1) {
+      //注意指定编码格式，发送方和接收方一定要统一，建议使用UTF-8
+      sb.append(new String(bytes, 0, len,"UTF-8"));
+    }
+    System.out.println("get message from server: " + sb);
+    
+    inputStream.close();
+    outputStream.close();
+    socket.close();
+  }
+}
+```
+
+　　客户端也有相应的变化，在发送完消息时，调用关闭输出流方法，然后打开输出流，等候服务端的消息。
+
+#### 2.2 使用场景
+
+　　这个模式的使用场景一般用在，客户端发送命令给服务器，然后服务器相应指定的命令，如果只是客户端发送消息给服务器，然后让服务器返回收到消息的消息，这就有点过分了，这就是完全不相信Socket的传输安全性，要知道它的底层可是TCP，如果没有发送到服务器端是会抛异常的，这点完全不用担心。
+
+#### 2.3 如何告知对方已发送完命令
+
+　　其实这个问题还是比较重要的，正常来说，客户端打开一个输出流，如果不做约定，也不关闭它，那么服务端永远不知道客户端是否发送完消息，那么服务端会一直等待下去，直到读取超时。所以怎么告知服务端已经发送完消息就显得特别重要。
+
+#### 2.3.1 通过Socket关闭
+
+　　这个是第一章介绍的方式，当Socket关闭的时候，服务端就会收到响应的关闭信号，那么服务端也就知道流已经关闭了，这个时候读取操作完成，就可以继续后续工作。
+
+　　但是这种方式有一些缺点
+
+客户端Socket关闭后，将不能接受服务端发送的消息，也不能再次发送消息
+如果客户端想再次发送消息，需要重现创建Socket连接
+
+#### 2.3.2 通过Socket关闭输出流的方式
+
+　　这种方式调用的方法是：
+
+socket.shutdownOutput();
+　　而不是（outputStream为发送消息到服务端打开的输出流）：
+
+outputStream.close();
+　　如果关闭了输出流，那么相应的Socket也将关闭，和直接关闭Socket一个性质。
+
+　　调用Socket的shutdownOutput()方法，底层会告知服务端我这边已经写完了，那么服务端收到消息后，就能知道已经读取完消息，如果服务端有要返回给客户的消息那么就可以通过服务端的输出流发送给客户端，如果没有，直接关闭Socket。
+
+　　这种方式通过关闭客户端的输出流，告知服务端已经写完了，虽然可以读到服务端发送的消息，但是还是有一点点缺点：
+
+不能再次发送消息给服务端，如果再次发送，需要重新建立Socket连接
+　　这个缺点，在访问频率比较高的情况下将是一个需要优化的地方。
+
+#### 2.3.3 通过约定符号
+
+　　这种方式的用法，就是双方约定一个字符或者一个短语，来当做消息发送完成的标识，通常这么做就需要改造读取方法。
+
+　　假如约定单端的一行为end，代表发送完成，例如下面的消息，end则代表消息发送完成：
+
+hello yiwangzhibujian
+end
+
+服务端响应的读取操作需要进行如下改造：
+
+```JAVA
+Socket socket = server.accept();
+// 建立好连接后，从socket中获取输入流，并建立缓冲区进行读取
+BufferedReader read=new BufferedReader(new InputStreamReader(socket.getInputStream(),"UTF-8"));
+String line;
+StringBuilder sb = new StringBuilder();
+while ((line = read.readLine()) != null && "end".equals(line)) {
+  //注意指定编码格式，发送方和接收方一定要统一，建议使用UTF-8
+  sb.append(line);
+}
+```
+
+可以看见，服务端不仅判断是否读到了流的末尾，还判断了是否读到了约定的末尾。
+
+　　这么做的优缺点如下：
+
+优点：不需要关闭流，当发送完一条命令（消息）后可以再次发送新的命令（消息）
+缺点：需要额外的约定结束标志，太简单的容易出现在要发送的消息中，误被结束，太复杂的不好处理，还占带宽
+　　经过了这么多的优化还是有缺点，难道就没有完美的解决方案吗，答案是有的，看接下来的内容。
+
+#### 2.3.4 通过指定长度
+
+　　如果你了解一点class文件的结构（后续会写，敬请期待），那么你就会佩服这么设计方式，也就是说我们可以在此找灵感，就是我们可以先指定后续命令的长度，然后读取指定长度的内容做为客户端发送的消息。
+
+　　现在首要的问题就是用几个字节指定长度呢，我们可以算一算：
+
+1个字节：最大256，表示256B
+2个字节：最大65536，表示64K
+3个字节：最大16777216，表示16M
+4个字节：最大4294967296，表示4G
+依次类推
+　　这个时候是不是很纠结，最大的当然是最保险的，但是真的有必要选择最大的吗，其实如果你稍微了解一点UTF-8的编码方式（字符编码后续会写，敬请期待），那么你就应该能想到为什么一定要固定表示长度字节的长度呢，我们可以使用变长方式来表示长度的表示，比如：
+
+第一个字节首位为0：即0XXXXXXX，表示长度就一个字节，最大128，表示128B
+第一个字节首位为110，那么附带后面一个字节表示长度：即110XXXXX 10XXXXXX，最大2048，表示2K
+第一个字节首位为1110，那么附带后面二个字节表示长度：即110XXXXX 10XXXXXX 10XXXXXX，最大131072，表示128K
+依次类推
+　　上面提到的这种用法适合高富帅的程序员使用，一般呢，如果用作命名发送，两个字节就够了，如果还不放心4个字节基本就能满足你的所有要求，下面的例子我们将采用2个字节表示长度，目的只是给你一种思路，让你知道有这种方式来获取消息的结尾：
+
+　　服务端程序：
+
+```java
+package yiwangzhibujian.waitreceive2;
+
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+public class SocketServer {
+  public static void main(String[] args) throws Exception {
+    // 监听指定的端口
+    int port = 55533;
+    ServerSocket server = new ServerSocket(port);
+
+    // server将一直等待连接的到来
+    System.out.println("server将一直等待连接的到来");
+    Socket socket = server.accept();
+    // 建立好连接后，从socket中获取输入流，并建立缓冲区进行读取
+    InputStream inputStream = socket.getInputStream();
+    byte[] bytes;
+    // 因为可以复用Socket且能判断长度，所以可以一个Socket用到底
+    while (true) {
+      // 首先读取两个字节表示的长度
+      int first = inputStream.read();
+      //如果读取的值为-1 说明到了流的末尾，Socket已经被关闭了，此时将不能再去读取
+      if(first==-1){
+        break;
+      }
+      int second = inputStream.read();
+      int length = (first << 8) + second;
+      // 然后构造一个指定长的byte数组
+      bytes = new byte[length];
+      // 然后读取指定长度的消息即可
+      inputStream.read(bytes);
+      System.out.println("get message from client: " + new String(bytes, "UTF-8"));
+    }
+    inputStream.close();
+    socket.close();
+    server.close();
+  }
+}
+```
+
+此处的读取步骤为，先读取两个字节的长度，然后读取消息，客户端为：
+
+```java
+package yiwangzhibujian.waitreceive2;
+
+import java.io.OutputStream;
+import java.net.Socket;
+
+public class SocketClient {
+  public static void main(String args[]) throws Exception {
+    // 要连接的服务端IP地址和端口
+    String host = "127.0.0.1";
+    int port = 55533;
+    // 与服务端建立连接
+    Socket socket = new Socket(host, port);
+    // 建立连接后获得输出流
+    OutputStream outputStream = socket.getOutputStream();
+    String message = "你好  yiwangzhibujian";
+    //首先需要计算得知消息的长度
+    byte[] sendBytes = message.getBytes("UTF-8");
+    //然后将消息的长度优先发送出去
+    outputStream.write(sendBytes.length >>8);
+    outputStream.write(sendBytes.length);
+    //然后将消息再次发送出去
+    outputStream.write(sendBytes);
+    outputStream.flush();
+    //==========此处重复发送一次，实际项目中为多个命名，此处只为展示用法
+    message = "第二条消息";
+    sendBytes = message.getBytes("UTF-8");
+    outputStream.write(sendBytes.length >>8);
+    outputStream.write(sendBytes.length);
+    outputStream.write(sendBytes);
+    outputStream.flush();
+    //==========此处重复发送一次，实际项目中为多个命名，此处只为展示用法
+    message = "the third message!";
+    sendBytes = message.getBytes("UTF-8");
+    outputStream.write(sendBytes.length >>8);
+    outputStream.write(sendBytes.length);
+    outputStream.write(sendBytes);    
+    
+    outputStream.close();
+    socket.close();
+  }
+}
+```
+
+客户端要多做的是，在发送消息之前先把消息的长度发送过去。
+
+　　这种事先约定好长度的做法解决了之前提到的种种问题，Redis的Java客户端Jedis就是用这种方式实现的这种方式的缺点：
+
+暂时还没发现
+　　当然如果是需要服务器返回结果，那么也依然使用这种方式，服务端也是先发送结果的长度，然后客户端进行读取。当然现在流行的就是，长度+类型+数据模式的传输方式。
+
+### 三、服务端优化
+
+#### 3.1 服务端并发处理能力
+
+　　在上面的例子中，服务端仅仅只是接受了一个Socket请求，并处理了它，然后就结束了，但是在实际开发中，一个Socket服务往往需要服务大量的Socket请求，那么就不能再服务完一个Socket的时候就关闭了，这时候可以采用循环接受请求并处理的逻辑：
+
+```java
+package yiwangzhibujian.multiserver;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+public class SocketServer {
+  public static void main(String args[]) throws IOException {
+    // 监听指定的端口
+    int port = 55533;
+    ServerSocket server = new ServerSocket(port);
+    // server将一直等待连接的到来
+    System.out.println("server将一直等待连接的到来");
+    
+    while(true){
+      Socket socket = server.accept();
+      // 建立好连接后，从socket中获取输入流，并建立缓冲区进行读取
+      InputStream inputStream = socket.getInputStream();
+      byte[] bytes = new byte[1024];
+      int len;
+      StringBuilder sb = new StringBuilder();
+      while ((len = inputStream.read(bytes)) != -1) {
+        // 注意指定编码格式，发送方和接收方一定要统一，建议使用UTF-8
+        sb.append(new String(bytes, 0, len, "UTF-8"));
+      }
+      System.out.println("get message from client: " + sb);
+      inputStream.close();
+      socket.close();
+    }
+    
+  }
+}
+```
+
+　　这种一般也是新手写法，但是能够循环处理多个Socket请求，不过当一个请求的处理比较耗时的时候，后面的请求将被阻塞，所以一般都是用多线程的方式来处理Socket，即每有一个Socket请求的时候，就创建一个线程来处理它。
+
+　　不过在实际生产中，创建的线程会交给线程池来处理，为了：
+
+线程复用，创建线程耗时，回收线程慢
+防止短时间内高并发，指定线程池大小，超过数量将等待，方式短时间创建大量线程导致资源耗尽，服务挂掉
+
+```java
+package yiwangzhibujian.threadserver;
+
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class SocketServer {
+  public static void main(String args[]) throws Exception {
+    // 监听指定的端口
+    int port = 55533;
+    ServerSocket server = new ServerSocket(port);
+    // server将一直等待连接的到来
+    System.out.println("server将一直等待连接的到来");
+
+    //如果使用多线程，那就需要线程池，防止并发过高时创建过多线程耗尽资源
+    ExecutorService threadPool = Executors.newFixedThreadPool(100);
+    
+    while (true) {
+      Socket socket = server.accept();
+      
+      Runnable runnable=()->{
+        try {
+          // 建立好连接后，从socket中获取输入流，并建立缓冲区进行读取
+          InputStream inputStream = socket.getInputStream();
+          byte[] bytes = new byte[1024];
+          int len;
+          StringBuilder sb = new StringBuilder();
+          while ((len = inputStream.read(bytes)) != -1) {
+            // 注意指定编码格式，发送方和接收方一定要统一，建议使用UTF-8
+            sb.append(new String(bytes, 0, len, "UTF-8"));
+          }
+          System.out.println("get message from client: " + sb);
+          inputStream.close();
+          socket.close();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      };
+      threadPool.submit(runnable);
+    }
+
+  }
+}
+```
+
+使用线程池的方式，算是一种成熟的方式。可以应用在生产中。
+
+#### 3.2 服务端其他属性
+
+　　ServerSocket有以下3个属性。
+
+SO_TIMEOUT：表示等待客户连接的超时时间。一般不设置，会持续等待。
+SO_REUSEADDR：表示是否允许重用服务器所绑定的地址。一般不设置，经我的测试没必要，下面会进行详解。
+SO_RCVBUF：表示接收数据的缓冲区的大小。一般不设置，用系统默认就可以了。
+
+
+
+## JAVA 网络编程
+
+### 一、网络编程概述
+
+```doc
+1.网络编程 
+　　1.1计算机网络概述 
+　　网络编程的实质就是两个(或多个)设备(例如计算机)之间的数据传输。 
+　　按照计算机网络的定义，通过一定的物理设备将处于不同位置的计算机连接起来组成的网络，这个网络中包含的设备有：计算机、路由器、交换机等等。 
+　　其实从软件编程的角度来说，对于物理设备的理解不需要很深刻，就像你打电话时不需要很熟悉通信网络的底层实现是一样的，但是当深入到网络编程的底层时，这些基础知识是必须要补的。 
+　　路由器和交换机组成了核心的计算机网络，计算机只是这个网络上的节点以及控制等，通过光纤、网线等连接将设备连接起来，从而形成了一张巨大的计算机网络。 
+　　网络最主要的优势在于共享：共享设备和数据，现在共享设备最常见的是打印机，一个公司一般一个打印机即可，共享数据就是将大量的数据存储在一组机器中，其它的计算机通过网络访问这些数据，例如网站、银行服务器等等。 
+　　如果需要了解更多的网络硬件基础知识，可以阅读《计算机网络》教材，对于基础进行强化，这个在基础学习阶段不是必须的，但是如果想在网络编程领域有所造诣，则是一个必须的基本功。 
+　　对于网络编程来说，最主要的是计算机和计算机之间的通信，这样首要的问题就是如何找到网络上的计算机呢？这就需要了解IP地址的概念。 
+　　为了能够方便的识别网络上的每个设备，网络中的每个设备都会有一个唯一的数字标识，这个就是IP地址。在计算机网络中,现在命名IP地址的规定是IPv4协议，该协议规定每个IP地址由4个0-255之间的数字组成，例如10.0.120.34。每个接入网络的计算机都拥有唯一的IP地址，这个IP地址可能是固定的，例如网络上各种各样的服务器，也可以是动态的，例如使用ADSL拨号上网的宽带用户，无论以何种方式获得或是否是固定的，每个计算机在联网以后都拥有一个唯一的合法IP地址，就像每个手机号码一样。 
+　　但是由于IP地址不容易记忆，所以为了方便记忆，有创造了另外一个概念——域名(Domain Name)，例如sohu.com等。一个IP地址可以对应多个域名，一个域名只能对应一个IP地址。域名的概念可以类比手机中的通讯簿，由于手机号码不方便记忆，所以添加一个姓名标识号码，在实际拨打电话时可以选择该姓名，然后拨打即可。 
+　　在网络中传输的数据，全部是以IP地址作为地址标识，所以在实际传输数据以前需要将域名转换为IP地址，实现这种功能的服务器称之为DNS服务器，也就是通俗的说法叫做域名解析。例如当用户在浏览器输入域名时，浏览器首先请求DNS服务器，将域名转换为IP地址，然后将转换后的IP地址反馈给浏览器，然后再进行实际的数据传输。 
+　　当DNS服务器正常工作时，使用IP地址或域名都可以很方便的找到计算机网络中的某个设备，例如服务器计算机。当DNS不正常工作时，只能通过IP地址访问该设备。所以IP地址的使用要比域名通用一些。 
+　　IP地址和域名很好的解决了在网络中找到一个计算机的问题，但是为了让一个计算机可以同时运行多个网络程序，就引入了另外一个概念——端口(port)。 
+　　在介绍端口的概念以前，首先来看一个例子，一般一个公司前台会有一个电话，每个员工会有一个分机，这样如果需要找到这个员工的话，需要首先拨打前台总机，然后转该分机号即可。这样减少了公司的开销，也方便了每个员工。在该示例中前台总机的电话号码就相当于IP地址，而每个员工的分机号就相当于端口。 
+　　有了端口的概念以后，在同一个计算机中每个程序对应唯一的端口，这样一个计算机上就可以通过端口区分发送给每个端口的数据了，换句话说，也就是一个计算机上可以并发运行多个网络程序，而不会在互相之间产生干扰。 
+　　在硬件上规定，端口的号码必须位于0-65535之间，每个端口唯一的对应一个网络程序，一个网络程序可以使用多个端口。这样一个网络程序运行在一台计算上时，不管是客户端还是服务器，都是至少占用一个端口进行网络通讯。在接收数据时，首先发送给对应的计算机，然后计算机根据端口把数据转发给对应的程序。 
+　　有了IP地址和端口的概念以后，在进行网络通讯交换时，就可以通过IP地址查找到该台计算机，然后通过端口标识这台计算机上的一个唯一的程序。这样就可以进行网络数据的交换了。 
+　　但是，进行网络编程时，只有IP地址和端口的概念还是不够的，下面就介绍一下基础的网络编程相关的软件基础知识。
+
+　　１.2网络编程概述 
+　　网络编程中有两个主要的问题，一个是如何准确的定位网络上一台或多台主机，另一个就是找到主机后如何可靠高效的进行数据传输。在TCP/IP协议中IP层主要负责网络主机的定位，数据传输的路由，由IP地址可以唯一地确定Internet上的一台主机。而TCP层则提供面向应用的可靠的或非可靠的数据传输机制，这是网络编程的主要对象，一般不需要关心IP层是如何处理数据的。 
+　　按照前面的介绍，网络编程就是两个或多个设备之间的数据交换，其实更具体的说，网络编程就是两个或多个程序之间的数据交换，和普通的单机程序相比，网络程序最大的不同就是需要交换数据的程序运行在不同的计算机上，这样就造成了数据好换的复杂。虽然通过IP地址和端口号可以找到网络上运行的一个程序，但是如果需要进行网络编程，则需要了解网络通讯的过程。 
+　　网络通讯基于“请求—响应”模型。在网络通讯中，第一次主动发起通讯的程序被称为客户端(client)程序，简称客户端，而第一次通讯中等待链接的程序被称为服务器端(Server)程序，简称服务器。一旦通讯建立，则客户端和服务器端完全一样，没有本质区别。 
+　　由此，网络编程中的两种程序就分别是客户端和服务器端，例如ＱＱ程序，每个ＱＱ用户安装的都是ＱＱ客户端程序，而ＱＱ服务器端程序则在腾讯公司的机房中，为大量的ＱＱ用户提供服务。这种网络编程的结构被称为客户端／服务器结构，也叫Client/Serverj结构，简称C/S结构。 
+　　使用C/S结构的程序，在开发时需要分别开发客户端和服务器端，这种结构的优势在于客户端是专门开发的，所以根据需要实现各种效果，专业点的说就是表现力丰富，而服务器端也需要专门进行开发。但是这种结构也存在着很多不足，例如通用性差，几乎不能通用，也就是说一种程序的客户端只能和对应的服务器端通讯，而不能和其他服务器端通讯，在实际维护中，也需要维护专门的客户端和服务器端，维护的压力比较大。 
+　　其实在运行很多程序时，没有必要使用专门的客户端，而需要使用通用的客户端，例如浏览器，使用浏览器作为客户端的结构称为浏览器/服务器结构，也叫做Browser/Server结构，简称B/S结构。 
+　　使用B/S结构的程序，在开发时只需要开发服务器端即可，这种优势在于开发压力比较小，不需要维护客户端，但是这种结构也存在这很多不足，例如浏览器的限制比较大，表现了不强，不能进行系统级别的操作等。 
+　　总之C/S结构和B/S结构是现在网络编程中常见的两种结构，B/S结构其实也就是一种特殊的C/S结构。 
+　　另外简单的介绍一下P2P(Point to Point)程序，常见的如BT、电驴等。P2P程序是一种特殊的程序，应该一个P2P程序中既包含客户端程序，也包含服务器端程序，例如BT，使用客户端程序部分连接其它的种子(服务器端)，而使用服务器端向其它的BT客户端传输数据。如果这个还不是很清楚，其实P2P程序和手机是一样的，当手机拨打电话时就是使用客户端的作用，而手机处于待机状态时，可以接收到其它用户拨打的电话则起的就是服务器端的功能，只是一般的手机不能同时使用拨打电话和接听电话的功能，而P2P程序实现了该功能。 
+　　最后介绍一下网络编程中最重要的，也是最复杂的概念——协议(protocol)。按照前面的介绍，网络编程就是运行在不同计算机中两个程序之间的数据交换。在实际进行数据交换时，为了让接收端理解该数据，计算机比较笨，什么都不懂的，那么久需要规定该数据的格式，这个数据的格式就是协议。 
+　　如果没有理解协议的概念，那么再举一个例子，记得有个电影叫《永不消逝的电波》，讲述的是地下党通过电台发送情报的故事，这里我们不探讨电影的剧情，而只关 心电台发送的数据。在实际发报时，需要首先将需要发送的内容转换为电报编码，然后将电报编码发送出去，而接收端接收的是电报编码，如果需要理解电报的内容 则需要根据密码本翻译出该电报的内容。这里的密码本就规定了一种数据格式，这种对于网络中传输的数据格式在网络编程中就被称作协议。 
+　　那么如何编写协议格式呢？答案是随意。只要按照这种协议格式能够生成唯一的编码，按照该编码可以唯一的解析出发送数据的内容即可。也正因为各个网络程序之间协议格式的不同，所以才导致了客户端程序都是专用的结构。 
+　　在实际的网络编程中，最麻烦的内容不是数据的发送和接受，因为这个功能在几乎所有编程语言中都提供了封装好的API进行调用，最麻烦的内容就是协议的设计及协议的生产和解析，这个才是网络编程最核心的内容。 
+　　１.3网络通讯方式 
+　　在现有的网络中，网络通讯的方式主要有两种： 
+　　1.TCP(传输控制协议)方式。 
+　　2.UDP(用户数据协议)方式。 
+　　为了方便理解这两种方式，还是先来看个例子。大家使用手机时，向别人传递信息时有两种方式：拨打电话和发送短信。使用拨打电话的方式可以保证该信息传递给别人，因为别人接电话时本身就确认收到了该信息。而发送短信的方式价格低廉，使用方便，但是接受人可能收不到。 
+　　在网络通讯中，TCP方式就类似于拨打电话，使用该种方式进行网络通讯时，需要建立专门的虚拟连接，然后进行可靠的数据传输，如果数据发送失败，则客户端会自动重发该数据，而UDP方式就类似于发送短信，使用这种方式进行网络通讯时，不需要建立专门的虚拟连接，传输也不是很可靠，如果发送失败则客户端无法获得。 
+　　这两种传输方式都是实际的网络编程中进行使用，重要的数据一般使用TCP方式进行数据传输，而大量的非核心数据则都通过UDP方式进行传递，在一些程序中甚至结合使用这两种方式进行数据的传递。 
+　　由于TCP需要建立专用的虚拟连接以及确认传输是否正确，所以使用TCP方式的速度稍微慢一些，而且传输时产生的数据量要比UDP稍微大一些。 
+　　关于网络编程的基础知识就介绍这么多，如果需要深入了解相关知识请阅读专门的计算机网络书籍，下面开始介绍Java语言中网络编程的相关技术。
+　　
+　　１.3网络编程步骤 
+　　按照前面的基础知识介绍，无论使用TCP方式还是UDP方式进行网络通讯，网络编程都是由客户端和服务器端组成，所以，下面介绍网络编程的步骤时，均以C/S结构为基础进行介绍。 
+　　1.3.1客户端网络编程步骤 
+　　客户端是指网络编程中首先发起连接的程序，客户端一般实现程序界面和基本逻辑实现，在进行实际的客户端编程时，无论客户端复杂还是简单，以及客户端实现的方式，客户端的编程主要由三个步骤实现： 
+　　1.建立网络连接 
+　　客户端网络编程的第一步都是建立网络连接。在建立网络连接时需要指定连接的服务器的IP地址和端口号，建立完成以后，会形成一条虚拟的连接，后续的操作就可以通过该连接实现数据交换了。 
+　　2.交换数据 
+　　连接建立以后，就可以通过这个连接交换数据了，交换数据严格要求按照请求响应模型进行，由客户端发送一个请求数据到服务器，服务器反馈一个响应数据后给客户端，如果客户端不发送请求则服务器就不响应。 
+　　根据逻辑需要，可以多次交换数据，但是还是必须遵循请求响应模型。 
+　　3.关闭网络连接 
+　　在数据交换完成后，关闭网络连接，释放程序占用的端口、内存等系统资源，结束网络编程。 
+　　最基本的步骤一般都是这三个步骤，在实际实现时，步骤2会出现重复，在进行代码组织时，由于网络编程是比较耗时的操作，所以一般开启专门的现场进行网络通讯。
+
+　　1.4服务器端网络编程步骤 
+　　服务器是指网络编程中被等待连接的程序，服务器端一般实现程序的核心逻辑以及数据存储等核心功能。服务器端的编程步骤和客户端不同，是由四个步骤实现，依次是： 
+　　1.监听端口 
+　　服务器端属于被动等待连接，所以服务器端启动以后，不需要发起连接，而只需要监听本地计算机的某个固定端口即可。这个端口就是服务器端开放给客户端的端口，服务器端程序运行的本地计算机的IP地址就是服务器端程序的IP地址。 
+　　2.获得连接 
+　　当客户端连接到服务器端时，服务器端就可以获得一个连接，这个连接包含客户端信息，例如客户端IP地址等，服务器端和客户端通过该连接进行数据交换。 
+　　一般在服务器端编程中，当获得连接时，需要开启专门的线程处理该连接，每个连接都由独立的线程实现。 
+　　3.交换数据 
+　　服务器端通过获得的连接进行数据交换。服务器端的数据交换步骤是首先接收客户端发送过来的数据，然后进行逻辑处理，再把处理以后的结果数据发送给客户端。简单来说，就是先接收再发送，这个和客户端的数据交换顺序不同。 
+　　其实，服务器端获得的连接和客户端的连接是一样的，只是数据交换的步骤不同。当然，服务器端的数据交换也是可以多次进行的。在数据交换完成以后，关闭和客户端的连接。 
+　　4.关闭连接 
+　　当服务器程序关闭时，需要关闭服务器端，通过关闭服务器端使得服务器监听的端口以及占用的内存可以释放出来，实现了连接的关闭。 
+　　其实服务器端编程的模型和呼叫中心的实现是类似的，例如移动的客服电话10086就是典型的呼叫中心，当一个用户拨打10086时，转接给一个专门的客服人员，由该客服实现和该用户的问题解决，当另外一个用户拨打10086时，则转接给另一个客服，实现问题解决，依次类推。 
+　　在服务器端编程时，10086这个电话号码就类似于服务器端的端口号码，每个用户就相当于一个客户端程序，每个客服人员就相当于服务器端启动的专门和客户端连接的线程，每个线程都是独立进行交互的。 
+　　这就是服务器端编程的模型，只是TCP方式是需要建立连接的，对于服务器端的压力比较大，而UDP是不需要建立连接的，对于服务器端的压力比较小罢了。 
+　　总之，无论使用任何语言，任何方式进行基础的网络编程，都必须遵循固定的步骤进行操作，在熟悉了这些步骤以后，可以根据需要进行逻辑上的处理，但是还是必须遵循固定的步骤进行。 
+　　其实，基础的网络编程本身不难，也不需要很多的基础网络知识，只是由于编程的基础功能都已经由API实现，而且需要按照固定的步骤进行，所以在入门时有一定的门槛，希望下面的内容能够将你快速的带入网络编程技术的大门。
+```
+
+### 二、Java网络编程技术
+
+　和网络编程有关的基本API位于Java.NET包中。
+
+介绍一下基础的网络类-InetAddress类。该类的功能是代表一个IP地址，并且将IP地址和域名相关的操作方法包含在该类的内部。
+
+```java
+package com.ahhf.ljxbw.socket;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+public class InetAddressDemo {
+
+	public static void main(String args[]) throws UnknownHostException {
+		InetAddress inetAddress = InetAddress.getByName("www.baidu.com");
+		System.out.println(inetAddress);
+		InetAddress inetAddress1 = InetAddress.getByName("www.stubook.com.cn");
+		System.out.println(inetAddress1);
+		InetAddress inet2 = InetAddress.getByName("127.0.0.1");
+		System.out.println(inet2);
+		InetAddress inet3 = InetAddress.getLocalHost();
+		System.out.println("---"+inet3);
+		String host = inet3.getHostName();
+		System.out.println("域名：" + host);
+	}
+}
+/*
+www.baidu.com/111.13.100.91
+www.stubook.com.cn/59.110.148.91
+/127.0.0.1
+---YBSNRH3JH6DY110/192.168.88.173
+域名：YBSNRH3JH6DY110
+
+*/
+
+
+
+/// 说明：由于该代码中包含一个互联网的网址，所以运行该程序时需要联网，否则将产生异常。 
+```
+
+### 三、TCP编程 
+
+在Java语言中，对于TCP方式的网络编程提供了良好的支持。
+
+在实际实现时，以java.net.socket类代表客户端连接，以java.net.ServerSocket类作为服务器端连接。
+
+在进行网络编程时，底层网络通讯的细节已经实现了比较高的封装，所以在程序员实际编程时，**只需要指定IP地址和端口号就可以建立连接了**。正是由于这种***高度的封装***，一方面，简化了Java语言网络编程的难度，另外也使得使用Java语言进行网络编程无法深入到网络的底层，所以使用Java语言进行网络底层系统编程很困难，具体点说，***Java语言无法事先底层的网络嗅探以及获得IP包结构等消息***。但是由于Java语言的网络编程比较简答，所以还是获得了广泛的使用。 
+
+在使用TCP方式进行网络编程时，需要按照前面介绍的网络编程的步骤进行，下面分别介绍一下在Java语言中客户端和服务器端的实现步骤。在客户端网络编程中，首先需要**建立连接**，在Java API中以及java.net.socket类的对象代表网络连接，所以建立客户端网络连接，也就是创建Socket类型的对象，该对象代表网络连接，示例如下： 
+　　Socket socket1=new Socket(“192.168.1.103”,10000); 
+　　Socket socket2=new Socket(“www.sohu.com”,80); 
+　　上面的代码中，socket1实现的是连接到IP地址是192.168.1.103的计算机的10000号端口，而socket2实现的是连接到域名是www.sohu.com的计算机的80号端口，至于底层网络如何实现建立连接，对于程序员来说是完全透明的。如果建立连接时，本机网络不通，或服务器端程序未开启，则会抛出异常。 
+　　连接一旦建立，则完成了客户端编程的第一步，紧接着的步骤就是按照“请求-响应”模型进行网络数据交换，在Java语言中，数据传输功能由Java IO实现，也就是说只需要**从连接中获得输入流和输出流即可，然后将需要发送的数据写入连接对象的输出流中，在发送完成后从输入流中读取数据即可**。示例代码如下： 
+　　OutputStream os=socket1.getOutputStream(); 
+　　InputStream is=socket1,getInputStream(); 
+　　上面的代码中，分别从socket1这个连接对象获得了输出流和输入流对象，在整个网络编程中，后续的数据交换就变成了IO操作，也就是遵循“请求-响应”模式的规定，先向输出流中写入数据，这些数据会被系统发送出去，然后再从输入流中读取服务器端的反馈信息，这样就完成了一次数据交换工作，当然这个数据交换可以多次进行。 
+　　这里获得的只是最基本的输出流和输入流对象，还可以根据前面学习到的IO知识，使用流的嵌套将这些获得的基本流对象转换成需要的装饰流对象，从而方便数据的操作。 
+　　最后当数据交换完成以后，**关闭网络连接，释放网络连接占用的系统端口和内存等资源**，完成网络操作，示例代码如下： 
+　　socket1.close（）; 
+
+```java
+package tcp;
+import java.io.*;
+import java.net.*;
+/**
+ * 简单的Socket客户端
+ * 功能为：发送字符串“Hello”到服务器端，并打印出服务器端的反馈
+ */
+public class SimpleSocketClient {
+         public static void main(String[] args) {
+                   Socket socket = null;
+                   InputStream is = null;
+                   OutputStream os = null;
+                   //服务器端IP地址
+                   String serverIP = "127.0.0.1";
+                   //服务器端端口号
+                   int port = 10000;
+                   //发送内容
+                   String data = "Hello";
+                   try {
+                            //建立连接
+                            socket = new Socket(serverIP,port);
+                            //发送数据
+                            os = socket.getOutputStream();
+                            os.write(data.getBytes());
+                            //接收数据
+                            is = socket.getInputStream();
+                            byte[] b = new byte[1024];
+                            int n = is.read(b);
+                            //输出反馈数据
+                            System.out.println("服务器反馈：" + new String(b,0,n));
+                   } catch (Exception e) {
+                            e.printStackTrace(); //打印异常信息
+                   }finally{
+                            try {
+                                     //关闭流和连接
+                                     is.close();
+                                     os.close();
+                                     socket.close();
+                            } catch (Exception e2) {}
+                   }
+         }
+}
+```
+
+
+
+在服务器端程序编程中，由于服务器端实现的是被动等待连接，所以服务器端编程的第一个步骤是监听端口，也就是监听是否有客户端连接到达。实现服务器端监听的代码为： 
+　　ServerSocket ss = new ServerSocket(10000); 
+　　该代码实现的功能是监听当前计算机的10000号端口，如果在执行该代码时，10000号端口已经被别的程序占用，那么将抛出异常。否则将实现监听。 
+　　服务器端编程的第二个步骤是获得连接。该步骤的作用是当有客户端连接到达时，建立一个和客户端连接对应的Socket连 接对象，从而释放客户端连接对于服务器端端口的占用。实现功能就像公司的前台一样，当一个客户到达公司时，会告诉前台我找某某某，然后前台就通知某某某， 然后就可以继续接待其它客户了。通过获得连接，使得客户端的连接在服务器端获得了保持，另外使得服务器端的端口释放出来，可以继续等待其它的客户端连接。 实现获得连接的代码是： 
+　　 Socket socket = ss.accept(); 
+　　 该代码实现的功能是获得当前连接到服务器端的客户端连接。需要说明的是accept和前面IO部分介绍的read方法一样，都是一个阻塞方法，也就是当无连接时，该方法将阻塞程序的执行，直到连接到达时才执行该行代码。另外获得的连接会在服务器端的该端口注册，这样以后就可以通过在服务器端的注册信息直接通信，而注册以后服务器端的端口就被释放出来，又可以继续接受其它的连接了。 
+　　 连接获得以后，后续的编程就和客户端的网络编程类似了，这里获得的Socket类型的连接就和客户端的网络连接一样了，只是服务器端需要首先读取发送过来的数据，然后进行逻辑处理以后再发送给客户端，也就是交换数据的顺序和客户端交换数据的步骤刚好相反。这部分的内容和客户端很类似，所以就不重复了，如果还不熟悉，可以参看下面的示例代码。 
+　　最后，在服务器端通信完成以后，关闭服务器端连接。实现的代码为：ss.close(); 
+
+```java
+package tcp;
+
+import java.io.*;
+import java.net.*;
+/**
+ * echo服务器
+ * 功能：将客户端发送的内容反馈给客户端
+ */
+public class SimpleSocketServer {
+         public static void main(String[] args) {
+                   ServerSocket serverSocket = null;
+                   Socket socket = null;
+                   OutputStream os = null;
+                   InputStream is = null;
+                   //监听端口号
+                   int port = 10000;
+                   try {
+                            //建立连接
+                            serverSocket = new ServerSocket(port);
+                            //获得连接
+                            socket = serverSocket.accept();
+                            //接收客户端发送内容
+                            is = socket.getInputStream();
+                            byte[] b = new byte[1024];
+                            int n = is.read(b);
+                            //输出
+                            System.out.println("客户端发送内容为：" + new String(b,0,n));
+                            //向客户端发送反馈内容
+                            os = socket.getOutputStream();
+                            os.write(b, 0, n);
+                   } catch (Exception e) {
+                            e.printStackTrace();
+                   }finally{
+                            try{
+                                     //关闭流和连接
+                                     os.close();
+                                     is.close();
+                                     socket.close();
+                                     serverSocket.close();
+                            }catch(Exception e){}
+                   }
+         }
+}
+```
+
+
+
+#### 1、如何复用Socket连接？ 
+
+　　在前面的示例中，客户端中建立了一次连接，只发送一次数据就关闭了，这就相当于拨打电话时，电话打通了只对话一次就关闭了，其实更加常用的应该是拨通一次电话以后多次对话，这就是复用客户端连接。 
+　　那么如何实现建立一次连接，进行多次数据交换呢？其实很简单，建立连接以后，将数据交换的逻辑写到一个循环中就可以了。这样只要循环不结束则连接就不会被关 闭。按照这种思路，可以改造一下上面的代码，让该程序可以在建立连接一次以后，发送三次数据，当然这里的次数也可以是多次，示例代码如下：
+
+```java
+
+package tcp;
+import java.io.*;
+import java.net.*;
+/**
+ * 复用连接的Socket客户端
+ * 功能为：发送字符串“Hello”到服务器端，并打印出服务器端的反馈
+ */
+public class MulSocketClient {
+         public static void main(String[] args) {
+                   Socket socket = null;
+                   InputStream is = null;
+                   OutputStream os = null;
+                   //服务器端IP地址
+                   String serverIP = "127.0.0.1";
+                   //服务器端端口号
+                   int port = 10000;
+                   //发送内容
+                   String data[] ={"First","Second","Third"};
+                   try {
+                            //建立连接
+                            socket = new Socket(serverIP,port);
+                            //初始化流
+                            os = socket.getOutputStream();
+                            is = socket.getInputStream();
+                            byte[] b = new byte[1024];
+                            for(int i = 0;i < data.length;i++){
+                                     //发送数据
+                                     os.write(data[i].getBytes());
+                                     //接收数据
+                                     int n = is.read(b);
+                                     //输出反馈数据
+                                     System.out.println("服务器反馈：" + new String(b,0,n));
+                            }
+                   } catch (Exception e) {
+                            e.printStackTrace(); //打印异常信息
+                   }finally{
+                            try {
+                                     //关闭流和连接
+                                     is.close();
+                                     os.close();
+                                     socket.close();
+                            } catch (Exception e2) {}
+                   }
+         }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+## SQL
+
+```doc
+SQL中PK，FK意思：
+--主键
+constraint PK_字段 primary key(字段),
+--唯一约束
+constraint UK_字段 unique key(字段),
+--默认约束
+constrint DF_字段 default('默认值') for 字段,
+--检查约束
+constraint CK_字段 check(约束。如：len(字段)>1),
+--主外键关系
+constraint FK_主表_从表 foreign(外键字段) references 主表(主表主键字段)
+```
+
+
+
+
+
+## Shiro
+
+## 一、简介
+
+
+
+Shiro可以帮助我们完成：认证、授权、加密、会话管理、与Web集成、缓存等。
+
+### 1.Shiro的API
+
+```doc
+
+Authentication：身份认证/登录，验证用户是不是拥有相应的身份；
+
+Authorization：授权，即权限验证，验证某个已认证的用户是否拥有某个权限；即判断用户是否能做事情，常见的如：验证某个用户是否拥有某个角色。或者细粒度的验证某个用户对某个资源是否具有某个权限；
+
+Session Manager：会话管理，即用户登录后就是一次会话，在没有退出之前，它的所有信息都在会话中；会话可以是普通JavaSE环境的，也可以是如Web环境的；
+
+Cryptography：加密，保护数据的安全性，如密码加密存储到数据库，而不是明文存储；
+
+Web Support：Web支持，可以非常容易的集成到Web环境；
+
+Caching：缓存，比如用户登录后，其用户信息、拥有的角色/权限不必每次去查，这样可以提高效率；
+
+Concurrency：shiro支持多线程应用的并发验证，即如在一个线程中开启另一个线程，能把权限自动传播过去；
+
+Testing：提供测试支持；
+
+Run As：允许一个用户假装为另一个用户（如果他们允许）的身份进行访问；
+
+Remember Me：记住我，这个是非常常见的功能，即一次登录后，下次再来的话不用登录了。
+
+```
+
+### 2.从外部和内部来看看Shiro的架构
+
+对于一个好的框架，从外部来看应该具有非常简单易于使用的API，且API契约明确；从内部来看的话，其应该有一个可扩展的架构，即非常容易插入用户自定义实现.
+
+#### 1.1从外部看如何使用Shiro完成工作
+
+````doc
+应用代码直接交互的对象是Subject，也就是说Shiro的对外API核心就是Subject
+
+Subject：主体，代表了当前“用户”，这个用户不一定是一个具体的人，与当前应用交互的任何东西都是Subject.
+所有Subject都绑定到SecurityManager，与Subject的所有交互都会委托给SecurityManager；
+可以把Subject认为是一个门面；SecurityManager才是实际的执行者；
+
+
+SecurityManager：安全管理器；即所有与安全有关的操作都会与SecurityManager交互；且它管理着所有Subject；可以看出它是Shiro的核心，它负责与后边介绍的其他组件进行交互.
+
+Realm：域，Shiro从从Realm获取安全数据（如用户、角色、权限），就是说SecurityManager要验证用户身份，那么它需要从Realm获取相应的用户进行比较以确定用户身份是否合法；也需要从Realm得到用户相应的角色/权限进行验证用户是否能进行操作；可以把Realm看成DataSource，即安全数据源。
+
+
+````
+
+##### 1.1.1简单的实现逻辑
+
+```doc
+也就是说对于我们而言，最简单的一个Shiro应用：
+
+1、应用代码通过Subject来进行认证和授权，而Subject又委托给SecurityManager；
+
+2、我们需要给Shiro的SecurityManager注入Realm，从而让SecurityManager能得到合法的用户及其权限进行判断。
+
+从以上也可以看出，Shiro不提供维护用户/权限，而是通过Realm让开发人员自己注入。
+```
+
+#### 1.2从内部看
+
+```doc
+Subject：主体，可以看到主体可以是任何可以与应用交互的“用户”；
+
+SecurityManager：相当于SpringMVC中的DispatcherServlet或者Struts2中的FilterDispatcher；是Shiro的心脏；所有具体的交互都通过SecurityManager进行控制；它管理着所有Subject、且负责进行认证和授权、及会话、缓存的管理。
+
+Authenticator：认证器，负责主体认证的，这是一个扩展点，如果用户觉得Shiro默认的不好，可以自定义实现；其需要认证策略（Authentication Strategy），即什么情况下算用户认证通过了；
+
+Authrizer：授权器，或者访问控制器，用来决定主体是否有权限进行相应的操作；即控制着用户能访问应用中的哪些功能；
+
+Realm：可以有1个或多个Realm，可以认为是安全实体数据源，即用于获取安全实体的；可以是JDBC实现，也可以是LDAP实现，或者内存实现等等；由用户提供；注意：Shiro不知道你的用户/权限存储在哪及以何种格式存储；所以我们一般在应用中都需要实现自己的Realm；
+
+SessionManager：如果写过Servlet就应该知道Session的概念，Session呢需要有人去管理它的生命周期，这个组件就是SessionManager；而Shiro并不仅仅可以用在Web环境，也可以用在如普通的JavaSE环境、EJB等环境；所有呢，Shiro就抽象了一个自己的Session来管理主体与应用之间交互的数据；这样的话，比如我们在Web环境用，刚开始是一台Web服务器；接着又上了台EJB服务器；这时想把两台服务器的会话数据放到一个地方，这个时候就可以实现自己的分布式会话（如把数据放到Memcached服务器）；
+
+SessionDAO：DAO大家都用过，数据访问对象，用于会话的CRUD，比如我们想把Session保存到数据库，那么可以实现自己的SessionDAO，通过如JDBC写到数据库；比如想把Session放到Memcached中，可以实现自己的Memcached SessionDAO；另外SessionDAO中可以使用Cache进行缓存，以提高性能；
+
+CacheManager：缓存控制器，来管理如用户、角色、权限等的缓存的；因为这些数据基本上很少去改变，放到缓存中后可以提高访问的性能
+
+Cryptography：密码模块，Shiro提高了一些常见的加密组件用于如密码加密/解密的。
+```
+
+
+
+
+
+## 二、身份验证
+
+```doc
+身份验证-------------即在应用中谁能证明他就是他本人。一般提供如他们的身份ID一些标识信息来表明他就是他本人，如提供身份证，用户名/密码来证明。
+
+在shiro中，用户需要提供principals （身份）和credentials（证明）给shiro，从而应用能验证用户身份：
+principals：身份，即主体的标识属性，可以是任何东西，如用户名、邮箱等，唯一即可。一个主体可以有多个principals，但只有一个Primary principals，一般是用户名/密码/手机号。
+
+credentials：证明/凭证，即只有主体知道的安全值，如密码/数字证书等。
+
+最常见的principals和credentials组合就是用户名/密码了。
+```
+
+
+
+
+
 
 
 ## Token
+
+
+
+
+
+
+
+
+
+
 
 
 
