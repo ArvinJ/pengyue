@@ -2,6 +2,2680 @@
 
 # work diary
 
+## Spring 朱哥哥带你们看看
+
+Spring是一个开源框架
+
+一个轻量级的Java开发框架
+
+**Spring的核心是控制反转(IoC)和面向切面(AOP)。简单来说，Spring是一个分层的JavaSE/EEfull-stack(一站式)轻量级开源框架**。
+
+为什么说Spring是一个一站式的轻量级开源框架呢？EE开发可分成三层架构，针对JavaEE的三层结构，每一层Spring都提供了不同的解决技术。
+
+WEB层：SpringMVC
+业务层：Spring的IoC
+持久层：Spring的JDBCTemplate(Spring的JDBC模板，ORM模板用于整合其他的持久层框架)
+
+Spring的核心有两部分：
+
+- IoC：控制反转。 
+  举例来说，在之前的操作中，比方说有一个类，我们想要调用类里面的方法(不是静态方法)，就要创建类的对象，使用对象调用方法实现。对于Spring来说，Spring创建对象的过程，不是在代码里面实现的，而是交给Spring来进行配置实现的。
+- AOP：面向切面编程。 
+
+Spring的优点：
+
+方便解耦，简化开发。 
+Spring就是一个大工厂，可以将所有对象的创建和依赖关系的维护，交给Spring管理。
+AOP编程的支持 
+Spring提供面向切面编程，可以方便的实现对程序进行权限拦截、运行监控等功能。
+声明式事务的支持 
+只需要通过配置就可以完成对事务的管理，而无须手动编程。
+方便程序的测试 
+Spring对Junit4支持，可以通过注解方便的测试Spring程序。
+方便集成各种优秀的框架 
+Spring不排斥各种优秀的开源框架，其内部提供了对各种优秀框架(如：Struts2、Hibernate、MyBatis、Quartz等)的直接支持。
+降低JavaEE API的使用难度 
+Spring对JavaEE开发中非常难用的一些API(JDBC、JavaMail、远程调用等)，都提供了封装，使这些API应用难度大大降低。
+
+### 1.IOC的底层实现原理
+
+IOC：Inversion of Control，控制反转。指的是对象的创建权反转(交给)给Spring，其作用是实现了程序的解耦合。也可这样解释：获取对象的方式变了。对象创建的控制权不是“使用者”，而是“框架”或者“容器”。 
+
+IOC就是指对象的创建，并不是在代码中用new操作new出来的，而是通过Spring进行配置创建的。其底层实现原理是XML配置文件+SAX解析+工厂设计模式。 
+就拿持久层(也即dao(data access object，数据访问对象)层)的开发来说，官方推荐做法是先创建一个接口，然后再创建接口对应的实现类。 
+
+例：
+
+```java
+// 先创建一个Userdao接口
+public interface UserDao {
+    public void add();
+}
+// 再创建Userdao接口的UserDaoImpl实现类
+public class UserDaoImpl implements UserDao {
+    public void add() {
+        balabala......
+    }
+}
+```
+
+
+
+接着我们在service层调用dao层，核心代码如下：
+
+```java
+// 接口 实例变量 = new 实现类
+UserDao dao = new UserDaoImpl();
+dao.add();
+```
+
+可发现缺点：service层和dao层耦合度太高了。解决方法是使用工厂模式进行解耦合操作。 
+创建一个工厂类，在工厂类中提供一个方法，返回实现类的对象。
+
+```java
+public class Factory {
+    // 提供返回实现类对象的方法
+    public static UserDao getUserDaoImpl() {
+        return new UserDaoImpl();
+    }
+}
+```
+
+然后在service层调用dao层的核心代码就变为：
+
+```java
+UserDao dao = Factory.getUserDaoImpl();
+dao.add();
+```
+
+如若这样做，会发现又产生了一个缺点：service层和工厂类又耦合了。所以使用工厂模式进行解耦合也只是一种权宜之计。下面我就来简单讲讲Spring IOC的底层实现原理：
+
+配置文件中可能会有如下配置信息：
+
+<bean id="userDaoImpl" class="cn.itcast.dao.impl.UserDaoImpl" />
+
+也是要创建一个工厂类，在工厂类中提供一个返回实现类对象的方法，但并不是直接new实现类，而是使用SAX解析配置文件，根据标签bean中的id属性值得到对应的class属性值，使用反射创建实现类对象。
+
+```java
+public class Factory {
+    public static UserDao getUserDaoImpl() {
+        // 1.使用SAX解析得到配置文件内容
+        // 直接根据id值userDaoImpl得到class属性值
+        String classvalue = "class属性值";
+        // 2.使用反射得到对象
+        Class clazz = Class.forName(classvalue);
+        UserDaoImpl userDaoImpl = (UserDaoImpl)lazz.newInstance();
+        return userDaoImpl;
+    }
+}
+```
+
+### 2.面向对象设计的七大原则
+
+1. 单一职责原则（Single Responsibility Principle）：每一个类应该专注于做一件事情。
+2. 里氏替换原则（Liskov Substitution Principle）：超类存在的地方，子类是可以替换的。
+3. 依赖倒置原则（Dependence Inversion Principle）：实现尽量依赖抽象，不依赖具体实现。
+4. 接口隔离原则（Interface Segregation Principle）：应当为客户端提供尽可能小的单独的接口，而不是提供大的总的接口。
+5. 迪米特法则（Law Of Demeter）：又叫最少知识原则，一个软件实体应当尽可能少的与其他实体发生相互作用。
+6. 开闭原则（Open Close Principle）：面向扩展开放，面向修改关闭。
+7. 组合/聚合复用原则（Composite/Aggregate Reuse Principle CARP）：尽量使用组合/聚合达到复用，尽量少用继承。原则： 一个类中有另一个类的对象。
+
+### 3.Spring的IOC入门
+
+#### 步骤一：下载Spring的开发包
+
+Spring的官网是[http://spring.io](http://spring.io/)。Spring的开发包的下载地址是[http://repo.springsource.org/libs-release-local/org/springframework/spring](http://repo.springsource.org/libs-release-local/org/springframework/spring)，上面说过，我下载的是spring-framework-4.2.4.RELEASE。解压缩之后，可发现Spring开发包的目录结构如下： 
+
+#### 步骤二：创建Web项目，引入Spring的开发包
+
+由于我们只是初次入门Spring，所以也只是使用Spring的基本功能，所以需要使用到下面的这4个Jar包：
+
+spring-beans-4.2.4.RELEASE.jar
+
+spring-context-4.2.4.RELEASE.jar
+
+spring-core-4.2.4.RELEASE.jar
+
+spring-expression-4.2.4.RELEASE.jar
+
+除此之外，还要导入Spring支持的日志jar包
+
+commons-logging-1.2.jar
+
+log4j.jar
+
+#### 步骤三：编写相关的类，在类中创建方法
+
+在src目录下创建一个cn.itcast.ioc包，并在该包下创建一个User类。
+
+```java
+public class User {
+    public void add() {
+        System.out.println("add.................");
+    }
+}
+```
+
+#### 步骤三：创建Spring配置文件
+
+注意：Spring配置文件的名称和位置没有固定要求，一般建议把该文件放到src下面，名称可随便写，官方建议写成applicationContext.xml。但我觉得这个文件名称太长了，所以决定写为bean1.xml。然后我们还需要在配置文件中引入约束，Spring学习阶段的约束是schema约束。那么问题来了，这个约束又该怎么写呢？可参考docs\spring-framework-reference\html目录下的xsd-configuration.html文件，在其内容最后找到如下内容：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans 
+        http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+</beans>
+```
+
+#### 步骤四：在配置文件中配置对象的创建
+
+<!-- 1.配置user对象的创建 --> 
+<bean id="user" class="cn.itcast.ioc.User"></bean>
+
+#### 步骤五：编写测试程序
+
+我们要在Spring中写代码来实现获取bean1.xml文件中配置的对象（该段代码不要求重点掌握，只是用在测试中而已）。这段代码主要用来解析Spring配置文件得到对象，但这个过程不需要我们写代码实现，Spring封装了一个对象帮我们进行了这些操作，这个对象叫ApplicationContext，它就能实现这个功能。 
+在cn.itcast.ioc包下创建一个TestIOC单元测试类，如下：
+
+```java
+public class TestIOC {
+
+    // 得到配置的user对象
+    @Test
+    public void demo1() {
+        // 1.加载Spring配置文件，把配置文件中的对象进行创建
+        ApplicationContext context = 
+                new ClassPathXmlApplicationContext("bean1.xml"); // classpath：类路径，src目录下的文件最终要编译到类路径下
+        // 2.根据配置文件的id得到user对象
+        User user = (User) context.getBean("user");
+        System.out.println(user);
+        user.add();
+    }
+}
+```
+
+**注意：classpath为类路径，src目录下的文件最终要编译到类路径下。**
+
+
+
+
+
+
+
+
+
+### 4.Spring的bean管理
+
+通俗一点说，Spring的bean管理即指创建对象时不需要new操作代码实现，而是交给Spring进行配置完成。 
+Spring进行bean管理有两种方式：
+
+***使用配置文件方式实现***
+***使用注解方式实现***
+
+Spring实例化bean的三种方式
+
+#### **使用无参构造（重点）**
+
+创建对象时候，调用类里面的无参数的构造方法实现。那么Spring配置文件中又该怎样写呢？基本类似于如下写法：
+
+```xml
+<!-- 1.配置user对象的创建 --> 
+<bean id="user" class="cn.itcast.ioc.User"></bean>
+```
+
+#### 使用静态工厂（了解）
+
+创建一个工厂类，在工厂类中提供一个静态的方法，这个方法返回类的对象；调用工厂类的方法时候，直接使用类名.方法名称即可以调用。下面举例来说明。 
+在src目录下创建一个cn.itcast.bean包，并在该包下创建一个Bean1类。
+
+```java
+public class Bean1 {
+
+    public void bean1() {
+        System.out.println("bean1..........");
+    }
+
+}
+
+```
+
+然后在该包下创建一个Bean1Factory工厂类。
+
+```java
+public class Bean1Factory {
+
+    // 静态方法
+    public static Bean1 getBean1() {
+        return new Bean1();
+    }
+
+}
+```
+
+接着Spring配置文件中应向下面这样配置：
+
+```xml
+<!-- 2.使用静态工厂创建对象 -->
+<bean id="bean1" class="cn.itcast.bean.Bean1Factory" factory-method="getBean1"></bean>
+```
+
+最后在该包下创建一个TestIOC单元测试类。
+
+```java
+public class TestIOC {
+
+    @Test
+    public void demo1() {
+        // 1.加载Spring配置文件，把配置文件中的对象进行创建
+        ApplicationContext context = 
+                new ClassPathXmlApplicationContext("bean1.xml");
+        // 2.根据配置文件的id得到user对象
+        Bean1 bean1 = (Bean1) context.getBean("bean1");
+        System.out.println(bean1);
+    }
+}
+```
+
+#### 使用实例工厂（了解）
+
+创建一个工厂类，在工厂类里面提供一个普通的方法，这个方法返回类对象；调用工厂类的方法时候，创建工厂类对象，使用对象调用方法即可。下面也举例来说明。 
+在src目录下的cn.itcast.bean包下创建一个Bean2类。
+
+```java
+public class Bean2 {
+
+    public void bean2() {
+        System.out.println("bean2..........");
+    }
+
+}
+```
+
+然后在该包下创建一个Bean2Factory工厂类。
+
+```java
+public class Bean2Factory {
+
+    public Bean2 getBean2() {
+        return new Bean2();
+    }
+
+}
+```
+
+
+
+接着Spring配置文件中应向下面这样配置：
+
+```xml
+<!-- 3.使用实例工厂创建对象 -->
+<!-- 3.1先创建工厂对象 -->
+<bean id="bean2Factory" class="cn.itcast.bean.Bean2Factory"></bean>
+<!-- 3.2再使用工厂对象创建bean2对象 -->
+<bean id="bean2" factory-bean="bean2Factory" factory-method="getBean2"></bean>
+```
+
+最后将TestIOC单元测试类的代码修改为：
+
+```java
+public class TestIOC {
+
+    @Test
+    public void demo1() {
+        // 1.加载Spring配置文件，把配置文件中的对象进行创建
+        ApplicationContext context = 
+                new ClassPathXmlApplicationContext("bean1.xml");
+        // 2.根据配置文件的id得到user对象
+        Bean2 bean2 = (Bean2) context.getBean("bean2");
+        System.out.println(bean2);
+    }
+}
+```
+
+### 5.Spring配置文件中bean标签常用的属性
+
+Spring配置文件中bean标签常用的属性有以下四种
+
+#### id 
+
+属性：根据id属性值得到配置对象。
+
+在Spring配置文件中会有多个bean标签，但它们的id属性值是不能相同的。Bean起名字时，在约束中采用的是ID约束——唯一，而且名字必须以字母开始，可以使用字母、数字、连字符、下划线、句号、冒号等，但id属性值不能有特殊符号。
+
+#### class
+
+属性：要创建对象的类的全路径。
+
+#### scope
+
+属性：bean的作用范围。 
+scope属性共有以下5个属性：
+
+- singleton：创建的对象是单例的，也是scope属性的默认值。 
+
+
+
+举例
+
+```java
+public class TestIOC {
+
+    // 得到配置的user对象
+    @Test
+    public void demo1() {
+        // 1.加载Spring配置文件，把配置文件中的对象进行创建
+        ApplicationContext context = 
+                new ClassPathXmlApplicationContext("bean1.xml");
+        // 2.根据配置文件的id得到user对象
+        User user1 = (User) context.getBean("user");
+        User user2 = (User) context.getBean("user");
+        System.out.println(user1);
+        System.out.println(user2);
+    }
+}
+```
+
+单元测试以上方法，一切就尽在不言中。其实，此时Spring配置文件中有关如下bean的配置：
+
+<bean id="user" class="cn.itcast.ioc.User"></bean>
+
+就相当于：
+
+<bean id="user" class="cn.itcast.ioc.User" scope="singleton"></bean>
+
+prototype：创建的对象是多实例的。 
+也可举例来说明它。将Spring配置文件中有关如下bean的配置：
+
+<bean id="user" class="cn.itcast.ioc.User"></bean>
+
+修改为：
+
+<bean id="user" class="cn.itcast.ioc.User" scope="prototype"></bean>
+
+测试单元测试类的方法就能明白了。
+
+globalSession：用在单点登录(即SSO，single sign on)上。
+
+#### name
+
+属性：name属性的功能和id属性是一样的。name属性和id属性区别是：在id属性值里面不能有特殊符号，在name属性值里面可以添加特殊符号。
+
+
+
+### 6.bean的生命周期的配置
+
+通过配置<bean>标签上的init-method作为bean的初始化的时候执行的方法，配置destroy-method作为bean的销毁的时候执行的方法。销毁方法想要执行，需要是单例创建的Bean而且在工厂关闭的时候，Bean才会被销毁。
+
+### 7.Spring中Bean的属性注入
+
+
+
+Bean的属性注入共有三种方式
+
+#### set方法注入
+
+```java
+public class Book {
+
+    private String bookname;
+
+    public void setBookname(String bookname) {
+        this.bookname = bookname;
+    }
+
+}
+
+Book book = new Book();
+book.setBookName("Java编程思想");
+```
+
+#### 有参数构造注入 
+
+用代码可表示如下：
+
+```java
+public class Book {
+
+    private String bookname;
+
+    public Book(String bookname) {
+        this.bookname = bookname;
+    }
+
+}
+
+Book book = new Book("代码大全");
+```
+
+#### 接口注入
+
+先编写一个接口：
+
+```java
+public interface Dao {
+    public void add(String name);
+}
+```
+
+
+
+再编写这个接口的实现类：
+
+```java
+public class DaoImpl implements Dao {
+    private String name;
+
+    public void add(String name) {
+        this.name = name;
+    }
+}
+```
+
+但在Spring框架里面，只支持前两种方式，即set方法注入和有参数构造注入。
+
+**构造方法的方式注入属性**
+在src目录下创建一个cn.itcast.property包，并在该包下编写一个Book实体类。
+
+```java
+public class Book {
+
+    private String bookname;
+
+    public Book(String bookname) {
+        this.bookname = bookname;
+    }
+
+    public void testBook() {
+        System.out.println("book.............." + bookname);
+    }
+
+}
+```
+
+接着在Spring配置文件中对以上JavaBean添加如下配置：
+
+```xml
+<!-- 4.使用有参数的构造注入属性 -->
+<bean id="book" class="cn.itcast.property.Book">
+    <!-- 使用标签，name：为属性的名字；value：为属性的值 -->
+    <constructor-arg name="bookname" value="beautifulMan_美美侠"></constructor-arg>
+</bean>
+```
+
+最后在该包下编写一个TestIOC单元测试类：
+
+```java
+public class TestIOC {
+
+    @Test
+    public void demo1() {
+        // 1.加载Spring配置文件，把配置文件中的对象进行创建
+        ApplicationContext context = 
+                new ClassPathXmlApplicationContext("bean1.xml");
+
+        Book book = (Book) context.getBean("book");
+        book.testBook();
+    }
+}
+```
+
+**set方法的方式注入属性**
+
+我们同样在cn.itcast.property包下编写一个Person实体类，在类中定义属性，并生成set方法。
+
+```java
+public class Person {
+
+    // 1.定义一个属性
+    private String username;
+
+    // 2.生成这个属性的set方法
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void testperson() {
+        System.out.println("person.............." + username);
+    }
+
+}
+```
+
+
+
+然后在Spring配置文件中，使用bean标签创建对象，在bean标签里面使用property标签注入属性。即在Spring配置文件中对以上JavaBean添加如下配置，
+
+```xml
+<!-- 5.使用set方法进行注入属性 -->
+<bean id="person" class="cn.itcast.property.Person">
+    <!--
+        使用property标签注入属性值
+        name：类属性名称
+        value属性：往属性中注入的值
+    -->
+    <property name="username" value="李阿昀"></property>
+</bean>
+```
+
+最后将TestIOC单元测试类的代码修改为：
+
+```java
+public class TestIOC {
+
+    @Test
+    public void demo1() {
+        // 1.加载Spring配置文件，把配置文件中的对象进行创建
+        ApplicationContext context = 
+                new ClassPathXmlApplicationContext("bean1.xml");
+
+        Person person = (Person)context.getBean("person");
+        person.testperson();
+    }
+}
+```
+
+**Spring的属性注入：对象类型的注入**
+在实际开发中，我们要提交表单到action里面去，然后在action里面调用service层的方法，接着在service层里面调用dao层的方法。在这里，我假设在service层里面调用dao层的方法，所以需要在servcie层里面创建dao层的对象实现调用。 
+
+先在src目录下创建一个cn.itcast.dao包，并在该包下编写一个UserDao类。
+
+```JAVA
+public class UserDao {
+
+    public void add() {
+        System.out.println("dao................");
+    }
+}
+```
+
+然后在src目录下再创建一个cn.itcast.service包，并在该包下编写一个UserService类。
+
+```JAVA
+public class UserService {
+
+    public void add() {
+        System.out.println("service.........");
+        // 调用dao
+        balabala......
+    }
+
+}
+```
+
+如果我们使用最原始的方式在service层里面调用dao层的方法，那么UserService类中add()方法应这样写：
+
+```java
+public void add() {
+    System.out.println("service.........");
+    // 原始方式，调用dao
+    UserDao dao = new UserDao();
+    dao.add();
+}
+```
+
+
+
+在Spring里面，我们就应该这么玩了。我们的最终目的是在service层里面得到dao层对象。所以步骤为：
+
+
+
+
+
+第一步，让dao作为service的一个属性。
+
+```java
+// 1.让dao作为service的一个属性
+private UserDao userDao;
+```
+
+
+
+第二步，生成dao属性的set方法。
+
+```java
+// 2.生成dao属性的set方法
+public void setUserDao(UserDao userDao) {
+    this.userDao = userDao;
+}
+```
+
+这时，UserService类的代码就变成：
+
+```java
+public class UserService {
+
+    // 1.让dao作为service的一个属性
+    private UserDao userDao;
+
+    // 2.生成dao属性的set方法
+    public void setUserDao(UserDao userDao) {
+        this.userDao = userDao;
+    }
+
+    public void add() {
+        System.out.println("service.........");
+        userDao.add();
+    }
+
+}
+```
+
+
+
+
+
+第三步，在Spring配置文件中进行配置和注入。
+
+```xml
+<!-- 6.注入对象的属性 -->
+<!-- 6.1先创建dao对象 -->
+<bean id="userDao" class="cn.itcast.dao.UserDao"></bean>
+<!-- 6.2再创建service对象    -->
+<bean id="userService" class="cn.itcast.service.UserService">
+    <!-- 在servcie里面注入userDao属性
+        name属性：service对象里面的userDao属性的名称
+        注入dao对象，不能写value属性，要写ref属性：dao配置的bean的id值
+    -->
+    <property name="userDao" ref="userDao"></property>
+</bean>
+```
+
+#### *名称空间p的属性注入方式——Spring2.x版本后提供的方式*
+
+在src目录下创建一个cn.itcast.propertydemo包，并在该包下编写一个Orders实体类。
+
+```java
+public class Orders {
+
+    private String oname;
+
+    public void setOname(String oname) {
+        this.oname = oname;
+    }
+
+    public void testorders() {
+        System.out.println("orders................" + oname);
+    }
+}
+```
+
+
+
+
+
+接下来我们需要在Spring核心配置文件中的schema约束位置定义p名称空间。
+
+
+
+xmlns:p="http://www.springframework.org/schema/p"
+
+
+
+紧接着，我们需要在Spring核心配置文件中添加如下配置：
+
+```xml
+<!-- 7.p(property，属性)名称空间的注入 -->
+<bean id="orders" class="cn.itcast.propertydemo.Orders" p:oname="gogogo"></bean>
+```
+
+
+
+最后将cn.itcast.property包下的TestIOC单元测试类的代码修改为：
+
+```java
+public class TestIOC {
+    @Test
+    public void demo1() {
+        // 1.加载Spring配置文件，把配置文件中的对象进行创建
+        ApplicationContext context = 
+                new ClassPathXmlApplicationContext("bean1.xml");
+
+        Orders orders = (Orders)context.getBean("orders");
+        orders.testorders();
+    }
+}
+```
+
+
+
+结论——使用p名称空间：
+
+普通属性：p:属性名称=”…”
+对象类型的属性：p:属性名称-ref=”…”
+
+### 8.注入复杂属性
+
+#### 注入数组类型的属性
+
+将cn.itcast.propertydemo包下的Orders类的代码修改为：
+
+
+
+```java
+public class Orders {
+
+    private String oname;
+
+    public void setOname(String oname) {
+        this.oname = oname;
+    }
+
+    // 1.数组类型的属性
+    private String[] arrays;
+    public void setArrays(String[] arrays) {
+        this.arrays = arrays;
+    }
+
+    public void testorders() {
+        // System.out.println("orders................" + oname);
+        System.out.println("数组：" + Arrays.toString(arrays));
+    }
+}
+```
+
+然后需要在Spring核心配置文件中添加如下配置：
+
+```xml
+<bean id="orders" class="cn.itcast.propertydemo.Orders"> <!-- 创建对象 -->
+    <!-- 数组类型 -->
+    <property name="arrays"> <!-- 注入属性 -->
+        <list>
+            <value>叶子</value>
+            <value>liayun</value>
+            <value>杰哥</value>
+        </list>
+    </property>
+</bean>
+```
+
+最后将cn.itcast.property包下的TestIOC单元测试类的代码修改为：
+
+```java
+public class TestIOC {
+    @Test
+    public void demo1() {
+        // 1.加载Spring配置文件，把配置文件中的对象进行创建
+        ApplicationContext context = 
+                new ClassPathXmlApplicationContext("bean1.xml");
+        Orders orders = (Orders)context.getBean("orders");
+        orders.testorders();
+    }
+}
+```
+
+#### 注入List集合类型的属性
+
+将cn.itcast.propertydemo包下的Orders类的代码修改为：
+
+public class Orders {
+
+    private String oname;
+
+    public void setOname(String oname) {
+        this.oname = oname;
+    }
+    
+    // 2.list类型的属性
+    private List<String> list;
+    public void setList(List<String> list) {
+        this.list = list;
+    }
+    
+    public void testorders() {
+        // System.out.println("orders................" + oname);
+        System.out.println("list：" + list);
+    }
+}
+
+
+
+然后需要在Spring核心配置文件中添加如下配置：
+
+```xml
+<bean id="orders" class="cn.itcast.propertydemo.Orders"> <!-- 创建对象 -->
+    <!-- list类型 -->
+    <property name="list">
+        <list>
+            <value>叶子</value>
+            <value>李昀玲</value>
+            <value>杰哥</value>
+        </list>
+    </property>
+</bean>
+```
+
+#### 注入Set集合类型的属性
+
+```java
+public class Orders {
+
+    private String oname;
+
+    public void setOname(String oname) {
+        this.oname = oname;
+    }
+
+    // 3.set类型的属性
+    private Set<String> keyset;
+    public void setKeyset(Set<String> keyset) {
+        this.keyset = keyset;
+    }
+
+    public void testorders() {
+        // System.out.println("orders................" + oname);
+        System.out.println("set：" + keyset);
+    }
+}
+```
+
+```xml
+<bean id="orders" class="cn.itcast.propertydemo.Orders"> <!-- 创建对象 -->
+    <!-- set类型 -->
+    <property name="keyset">
+        <set>
+            <value>蝙蝠侠</value>
+            <value>钢铁侠</value>
+            <value>美美侠</value>
+        </set>
+    </property>
+</bean>
+```
+
+
+
+其实，以上配置也可以写为：
+
+```xml
+<bean id="orders" class="cn.itcast.propertydemo.Orders"> <!-- 创建对象 -->
+    <!-- set类型 -->
+    <property name="keyset">
+        <list>
+            <value>蝙蝠侠</value>
+            <value>钢铁侠</value>
+            <value>美美侠</value>
+        </list>
+    </property>
+</bean>
+```
+
+#### 注入Map集合类型的属性
+
+```java
+public class Orders {
+
+    private String oname;
+
+    public void setOname(String oname) {
+        this.oname = oname;
+    }
+
+    // 4.map类型
+    private Map<String, String> map;
+    public void setMap(Map<String, String> map) {
+        this.map = map;
+    }
+
+    public void testorders() {
+        // System.out.println("orders................" + oname);
+        System.out.println("map：" + map);
+    }
+}
+```
+
+```xml
+<bean id="orders" class="cn.itcast.propertydemo.Orders"> <!-- 创建对象 -->
+    <!-- map类型 -->
+    <property name="map">
+        <map>
+            <entry key="username" value="潘金莲"></entry>
+            <entry key="password" value="1314"></entry>
+            <entry key="address" value="明初"></entry>
+        </map>
+    </property>
+</bean>
+```
+
+#### 注入Properties类型的属性
+
+````java
+public class Orders {
+
+    private String oname;
+
+    public void setOname(String oname) {
+        this.oname = oname;
+    }
+
+    // 5.properties
+    private Properties properties;
+    public void setProperties(Properties properties) {
+        this.properties = properties;
+    }
+
+    public void testorders() {
+        // System.out.println("orders................" + oname);
+        System.out.println("properties：" + properties);
+    }
+}
+````
+
+
+
+然后需要在Spring核心配置文件中添加如下配置：
+
+````xml
+<bean id="orders" class="cn.itcast.propertydemo.Orders"> <!-- 创建对象 -->
+    <!-- properties类型 -->
+    <property name="properties">
+        <props>
+            <prop key="name">宫本一郎</prop>
+            <prop key="address">日本</prop>
+        </props>
+    </property>
+</bean>
+````
+
+## IoC和DI的区别
+
+```dockerfile
+IoC：控制反转，即把对象的创建交给Spring进行管理。所以Spring IoC容器是用来创建对象，管理依赖关系的。
+DI(Dependency Injection)：依赖注入，即在创建对象的过程中，向类里面的属性中设置值。
+IoC和DI的关系：依赖注入不能单独存在，须在控制反转基础之上完成，用更通俗点的话来说，就是注入类里面的属性值，不能直接注入，须创建类的对象再完成注入。
+```
+
+
+
+## Spring中的工厂
+
+### ApplicationContext
+
+ApplicationContext接口有两个实现类，
+
+- ClassPathXmlApplicationContext：加载的是类路径下的Spring配置文件
+
+
+- FileSystemXmlApplicationContext：加载的是本地磁盘下的Spring配置文件
+
+### ApplicationContext和BeanFactory的区别
+
+虽然使用这两个对象都可以加载Spring的配置文件，并创建配置文件中的对象。但他俩还是有区别的，最主要的区别是：
+
+- 使用applicationContext操作时，可把Spring里面的配置文件中的对象都进行创建。
+- 使用BeanFactory对象操作时，在调用getBean方法的时候进行对象的创建。
+
+
+
+
+
+
+
+## Spring的bean管理（注解方式）
+
+
+
+注解：代码中的特殊标记，注解可以使用在类、方法、属性上面，使用注解可实现一些基本的功能。注解的写法是`@注解名称(属性=属性值)`。
+
+使用注解创建对象
+第一步，创建Web项目，引入Spring的开发包 
+
+
+
+除了导入Spring基本的Jar包外(可参考《Spring的概述》一文)，还须导入Spring注解的Jar包
+
+Spring-aop-4.2.4.RELEASE
+
+
+
+**第二步，编写相关的类** 
+在src目录下创建一个cn.itcast.anno包，并在该包下编写一个User类。
+
+```java
+public class User {
+
+    public void add() {
+        System.out.println("add....................");
+    }
+
+}
+```
+
+**第三步，创建Spring配置文件**
+
+- 在Spring配置文件中引入约束，如下：
+
+  ```xml
+  <beans xmlns="http://www.springframework.org/schema/beans"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:context="http://www.springframework.org/schema/context" 
+      xsi:schemaLocation="
+          http://www.springframework.org/schema/beans 
+          http://www.springframework.org/schema/beans/spring-beans.xsd
+          http://www.springframework.org/schema/context 
+          http://www.springframework.org/schema/context/spring-context.xsd">
+  ```
+
+  ​
+
+  在Spring配置文件中做些事情，即开启注解扫描。
+
+  ```xml
+  <!-- 开启注解的扫描。到配置的包里面扫描类、方法、属性上面是否有注解 -->
+  <context:component-scan base-package="cn.itcast"></context:component-scan>
+  ```
+
+  注意：也可以这样开启注解扫描，如下：
+
+```xml
+<context:annotation-config></context:annotation-config>
+```
+
+但是这种开启注解扫描的方式，只会扫描属性上面的注解。实际开发中用到的并不多！故不推荐使用。
+
+
+
+**第四步，在创建对象所在的类上面使用注解实现**
+
+```java
+@Component(value="user") // 类似于<bean id="user" class="..." />
+public class User {
+
+    public void add() {
+        System.out.println("add....................");
+    }
+
+}
+```
+
+
+
+如若注解里面属性名称是value，则可以省略，所以上面的User类亦可这样写为：
+
+```java
+@Component("user") // 类似于<bean id="user" class="..." />
+public class User {
+
+    public void add() {
+        System.out.println("add....................");
+    }
+
+}
+```
+
+第五步，编写测试类 
+
+````java
+public class TestDemo {
+
+    @Test
+    public void testUser() {
+        ApplicationContext context = new ClassPathXmlApplicationContext("bean1.xml");
+        User user = (User) context.getBean("user");
+        System.out.println(user);
+        user.add();
+    }
+
+}
+````
+
+
+
+## Spring的bean管理中常用的注解
+
+### @Component(作用在类上)
+
+@Repository：用于对DAO实现类进行标注(持久层)。
+
+@Service：用于对Service实现类进行标注(业务层)。
+
+@Controller：用于对Controller实现类进行标注(WEB层)。
+
+### bean的作用范围的注解
+
+`@Scope`
+
+- singleton：单例，默认值
+- prototype：多例
+
+
+
+所以我们可通过注解设置创建对象是单例或者还是多实例的。这样User类的代码亦可写为：
+
+```java
+@Service("user")
+@Scope("singleton")
+public class User {
+
+    public void add() {
+        System.out.println("add....................");
+    }
+
+}
+```
+
+## 使用注解注入属性（对象）
+
+
+
+这儿，我举个例子来说明如何使用注解注入(对象类型的)属性。 
+先创建业务层中的UserService类：
+
+
+
+public class UserService {
+​    public void add() {
+​        System.out.println("service...........");
+​    }
+}
+
+
+
+再创建持久层中的UserDao类：
+
+
+
+public class UserDao {
+​    public void add() {
+​        System.out.println("dao................");
+​    }
+}
+
+
+
+以上两个类都创建在cn.itcast.anno包中。我们要实现的目的是在UserService类里面调用UserDao类的方法，这样我们就要在UserService类里面得到UserDao类的对象。之前是采用xml配置文件的方式来注入属性的，本文将使用注解的方式完成注入属性的操作。
+
+
+
+step1:在UserService类里面定义UserDao类型属性
+
+private UserDao userDao;
+
+在UserService类里面定义UserDao类型的属性，由于是使用注解的方式，故不需要手动生成set方法。
+
+
+
+step2:
+
+进行注解方式实现属性注入
+
+创建UserDao类的对象和UserService类的对象
+
+```java
+@Service("userService")
+public class UserService {
+
+    private UserDao userDao;
+
+    public void add() {
+        System.out.println("service...........");
+        userDao.add();
+    }
+
+}
+
+
+@Repository("userDao")
+public class UserDao {
+
+    public void add() {
+        System.out.println("dao................");
+    }
+}
+```
+
+
+
+在UserService类里面注入UserDao类的对象，使用注解来实现。首先我使用`@Autowired`注解来实现。
+
+```java
+@Service("userService")
+public class UserService {
+
+    @Autowired
+    private UserDao userDao;
+
+    public void add() {
+        System.out.println("service...........");
+        userDao.add();
+    }
+
+}
+```
+
+
+
+注意：使用注解`@Autowired`，它不是根据名字去找Dao，而是默认按类型进行装配。 
+当然了，也可使用`@Resource`注解来实现，如下：
+
+```java
+@Service("userService")
+public class UserService {
+
+    @Resource(name="userDao")
+    private UserDao userDao;
+
+    public void add() {
+        System.out.println("service...........");
+        userDao.add();
+    }
+
+}
+```
+
+
+
+注意，使用`@Resource`注解，它默认是按名称进行注入的。在实际开发中，我们也是使用`@Resource`注解来注入属性的，注解`@Autowired`用到的并不多。
+
+
+
+
+
+
+
+# AOP的概述
+
+## 什么是AOP
+
+
+
+Spring是用来解决实际开发中的一些问题的，AOP解决了OOP中遇到的一些问题，是OOP的延续和扩展。我们可从以下三个方面来理解AOP：
+
+1.扩展功能不是通过修改源代码而实现的。 可通过Struts2框架中的拦截器来理解。
+
+2.AOP采用横向抽取机制实现。 
+要理解横向抽取机制，就必须认识纵向抽取机制。例如有如下的一个类：
+
+```java
+public class User {
+    public void add() {
+        添加的逻辑...
+    }
+}
+```
+
+现在我们在add()方法中要扩展一个功能，即日志添加功能，添加完该功能之后，可记录在什么时候添加了哪个用户。想到的最原始的方法就是直接修改源代码。
+
+```java
+public class User {
+    public void add() {
+        添加的逻辑...
+        直接写添加日志记录的代码以实现...
+    }
+}
+```
+
+很显然这是一种愚蠢的做法，并且这儿还有一个原则——**修改功能一般不是直接修改源代码来实现的**。顺其自然地就要来讲**纵向抽取机制**了，这时我们可编写一个BaseUser类。
+
+```java
+public class BaseUser {
+    public void wirtelog() {
+        记录日志的逻辑...
+    }
+}
+```
+
+接下来让User类继承BaseUser类，如下：
+
+```java
+public class User extends BaseUser  {
+    public void add() {
+        添加的逻辑...
+        // 记录日志
+        super.wirtelog();
+    }
+}
+```
+
+
+
+这样是不是就万事大吉了呢？你懂的！因为当父类的方法名称变化时，子类调用的方法也必然要进行修改。最后终于要讲横向抽取机制了，横向抽取机制分为两种情况，下面分别加以简单阐述。 
+**有接口情况的横向抽取机制：** 
+
+
+
+例如有一个如下接口：
+
+
+
+public interface UserDao {
+​    public void add();
+}
+
+接口的一个实现类如下：
+
+```
+public class UserDaoImpl implements UserDao {
+    public void add() {
+        ...
+    }
+}
+```
+
+我们现在即可使用动态代理技术增强类里面的方法，即创建接口的实现类代理对象，并增强UserDaoImpl类里面的add()方法。 
+**无接口情况的横向抽取机制：** 
+例如有一个如下User类：
+
+```
+public class User {
+    public void add() {
+        ...
+    }
+}12345
+```
+
+我们也可使用动态代理技术增强类里面的方法，即创建被增强方法所在类的子类代理对象，并增强User类里面的add()方法。
+
+3.AOP底层使用动态代理实现 
+
+- 有接口情况：创建接口实现类代理对象
+- 没有接口情况：创建增强方法所在类的子类代理对象
+
+## 为什么学习AOP
+
+在不修改源代码的情况下，即可对程序进行增强。AOP可以进行***权限校验***、**日志记录**、**性能监控**和**事务控制**。
+
+## Spring的AOP的由来
+
+AOP最早是由AOP联盟的组织提出的，他们制定了一套规范。Spring将AOP思想引入到框架中，且必须遵守AOP联盟的规范。
+
+
+
+## Spring的AOP的底层实现
+
+Spring的AOP的底层用到了两种代理机制：
+
+- JDK的动态代理：针对实现了接口的类产生代理。
+- Cglib的动态代理：针对没有实现接口的类产生代理，应用的是底层的字节码增强的技术，生成当前类的子类对象。
+
+
+
+## AOP开发中的相关术语
+
+- Joinpoint(连接点)：所谓连接点是指那些被拦截到的点。在Spring中，这些点指的是**方法**，因为**Spring只支持方法类型的连接点**。
+- Pointcut(切入点)：所谓切入点是指我们要对哪些Joinpoint进行拦截的定义。
+- Advice(通知/增强)：所谓通知是指拦截到Joinpoint之后所要做的事情就是通知。通知分为前置通知、后置通知、异常通知、最终通知和环绕通知(切面要完成的功能)。
+- Aspect(切面)：是切入点和通知的结合。
+- Target(目标对象)：代理的目标对象(要增强的类)
+- Weaving(织入)：是指把增强应用到目标对象来创建新的代理对象的过程。Spring采用动态代理织入，而AspectJ采用编译期织入和类装载期织入。
+- Proxy(代理)：一个类被AOP织入增强后，就产生一个结果代理类。
+- Introduction(引介)：引介是一种特殊的通知在不修改类代码的前提下，Introduction可以在运行期为类动态地添加一些方法或Field。
+
+
+
+例如有如下一个类：
+
+```java
+public class User {
+    public void add() {
+
+    }
+
+    public void update() {
+
+    }
+
+    public void delete() {
+
+    }
+}
+```
+
+
+
+下面是用比较通俗易懂的话来阐述AOP开发中的常见的相关术语：
+
+- 连接点：在User类里面有3个方法，这3个方法都可以被增强，类里面的哪些方法可以被增强，这些**方法就可被成为连接点**。
+
+
+- 切入点：在一个类中可以有很多的方法被增强，在实际操作中，如若只增强了类里面的add方法，则**实际增强的方法被称为切入点**。
+
+
+- 增强/通知：比如增强User类里面的add方法，在add方法中添加了日志功能，这个日志功能就称为增强。 
+  通知类型：
+  - 前置通知：在增强的方法执行之前进行操作。
+  - 后置通知：在增强的方法执行之后进行操作。
+  - 环绕通知：在增强的方法执行之前和执行之后进行操作。
+  - 最终通知：增强了两个方法，执行第一个方法，执行第二个方法，在第二个方法执行之后进行操作。 
+    也可理解为后置通知后面执行的通知或者**无论目标方法是否出现异常，最终通知都会执行**。
+  - 异常通知：程序出现异常之后执行的通知。
+- 切面：把增强应用到切入点的过程。即把具体增强的逻辑用到具体的方法上面的过程。
+- 目标对象：增强的方法所在的类，即要增强的类。
+- Weaving(织入)：是指把增强应用到目标对象的过程。即把把advice应用到target的过程。
+
+## Spring的基于AspectJ的AOP开发
+
+## @AspectJ的简介
+
+
+
+AspectJ是一个面向切面的框架，它扩展了Java语言。
+
+AspectJ是一个基于Java语言的AOP框架。
+
+使用AspectJ方式来开发AOP共有两种方式：
+
+**基于AspectJ的xml配置文件的方式**
+**基于AspectJ的注解的方式**
+
+
+
+## Spring使用AspectJ进行AOP的开发：XML的方式
+
+**第一步，引入相应的Jar包** 
+上面我说过，除了导入最基本的Jar包外，使用AspectJ还需要导入Spring AOP和AspectJ相关的Jar包。
+
+Spring的传统AOP的开发的包： 
+spring-aop-4.2.4.RELEASE.jar
+aopalliance-1.0.jar
+
+AspectJ的开发包 
+aspectjweaver-1.8.7.jar
+spring-aspects-4.2.4.RELEASE.jar
+
+
+
+**第二步，编写目标类** 
+在src目录下创建一个cn.itcast.aop包，并在该包下编写一个目标类。
+
+```java
+public class Book {
+
+    public void add() {
+        System.out.println("book add.................");
+    }
+
+}
+```
+
+
+
+**第三步，创建增强的类以及增强的方法**
+
+```java
+public class MyBook {
+
+    // 前置通知
+    public void before1() {
+        System.out.println("before........");
+    }
+
+}
+```
+
+
+
+我们现在要求在Book类里面的add方法之前执行MyBook类里面的before1的方法。 
+
+**第四步，在Spring配置文件中进行配置**
+
+1. 在Spring配置文件中引入aop约束
+
+```xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop" xsi:schemaLocation="
+        http://www.springframework.org/schema/beans 
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop 
+        http://www.springframework.org/schema/aop/spring-aop.xsd">
+```
+
+2.配置两个类对象
+
+```xml
+<!-- book对象 -->
+<bean id="book" class="cn.itcast.aop.Book"></bean>
+<bean id="myBook" class="cn.itcast.aop.MyBook"></bean>
+```
+
+3.配置AOP操作，即需要配置切入点和切面。
+
+```xml
+<!-- 配置AOP的操作  -->
+<aop:config>
+    <!-- 配置切入点，对Book类里面的所有方法都增强 -->
+    <aop:pointcut expression="execution(* cn.itcast.aop.Book.*(..))" id="pointcut1"></aop:pointcut>
+
+    <!-- 配置切面    aop:aspect标签里面使用属性ref，ref属性值写增强类的bean的id值 -->
+    <aop:aspect ref="myBook">
+        <!-- 
+            增强类型
+            method属性：增强类的方法名称
+            pointcut-ref属性：切入点的id值
+        -->
+        <!-- 前置通知 -->
+        <aop:before method="before1" pointcut-ref="pointcut1"></aop:before>
+    </aop:aspect>
+</aop:config>
+```
+
+
+
+**第五步，编写一个单元测试类并进行测试** 
+在cn.itcast.aop包下编写一个TestDemo单元测试类。
+
+```java
+public class TestDemo {
+
+    @Test
+    public void testUser() {
+        ApplicationContext context = new ClassPathXmlApplicationContext("bean2.xml");
+        Book book = (Book) context.getBean("book");
+        book.add();
+    }
+}
+```
+
+
+
+
+
+其实我们也可以整合Junit单元测试，Spring对Junit4进行了支持，可以通过注解方便的测试Spring程序，所以就不必写那么麻烦的单元测试类了。首先导入如下Jar包： 
+
+spring-test-4.2.4.RELEASE.jar
+
+
+
+然后编写如下的单元测试类：
+
+```java
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration("/bean2.xml") // 或者也可写为：@ContextConfiguration("classpath:bean2.xml")
+public class TestDemo {
+
+    @Autowired
+    private Book book;
+
+    @Test
+    public void demo1() {
+        book.add();
+    }
+
+}
+```
+
+### 演示其他通知类型
+
+先将MyBook增强类的代码修改为：
+
+```java
+public class MyBook {
+
+    // 前置通知
+    public void before1() {
+        System.out.println("before........");
+    }
+
+    // 后置通知
+    public void after11() {
+        System.out.println("after...........");
+    }
+
+    // 环绕通知
+    public void around1(ProceedingJoinPoint joinPoint) throws Throwable {
+        System.out.println("方法之前执行...........");
+        // 让被增强的方法执行
+        joinPoint.proceed();
+        System.out.println("方法之后执行...........");
+    }
+
+}
+```
+
+然后再在Spring配置文件中进行配置。
+
+```xml
+<!-- 配置AOP的操作  -->
+<aop:config>
+    <!-- 配置切入点，对Book类里面的所有方法都增强 -->
+    <aop:pointcut expression="execution(* cn.itcast.aop.Book.*(..))" id="pointcut1"></aop:pointcut>
+
+    <!-- 配置切面    aop:aspect标签里面使用属性ref，ref属性值写增强类的bean的id值 -->
+    <aop:aspect ref="myBook">
+        <!-- 
+            增强类型
+            method属性：增强类的方法名称
+            pointcut-ref属性：切入点的id值
+        -->
+        <!-- 前置通知 -->
+        <aop:before method="before1" pointcut-ref="pointcut1"></aop:before>
+        <!-- 后置通知 -->
+        <aop:after-returning method="after11" pointcut-ref="pointcut1"></aop:after-returning>
+        <!-- 环绕通知 -->
+        <aop:around method="around1" pointcut-ref="pointcut1"></aop:around>
+    </aop:aspect>
+</aop:config>
+```
+
+## 切入点表达式
+
+通过execution函数，可以定义切点的方法切入。 
+
+
+
+语法为：`execution(<访问修饰符>?<返回类型><方法名>(<参数>)<异常>)`。 
+
+例如：
+
+- 匹配所有类的public方法：`execution(public *.*(..))`
+- 匹配指定包下所有类的方法：`execution(* cn.itcast.dao.*(..))`，但不包含子包
+- `execution(* cn.itcast.dao..*(..))`，`..*`表示包、子孙包下所有类。
+- 匹配指定类所有方法：`execution(* cn.itcast.service.UserService.*(..))`
+- 匹配实现特定接口的所有类的方法：`execution(* cn.itcast.dao.GenericDAO+.*(..))`
+- 匹配所有save开头的方法：`execution(* save*(..))`
+- 匹配所有类里面的所有的方法：`execution(* *.*(..))`
+
+# IoC配置文件和注解混合使用
+
+实际开发中，我们都会混合使用IoC配置文件和注解，一般是使用配置文件方式创建对象，使用注解方式注入属性。当然了，你亦可另辟蹊径。下面我举个例子来演示。 
+在src目录下创建一个cn.itcast.xmlanno包，并在该包下编写一个BookDao类、PersonDao类、BookService类。
+
+
+
+BookDao类
+
+```java
+public class BookDao {
+
+    public void update() {
+        System.out.println("book dao.............");
+    }
+}
+```
+
+
+
+PersonDao类
+
+````java
+public class PersonDao {
+
+    public void update() {
+        System.out.println("person dao.............");
+    }
+}
+````
+
+
+
+BookService类
+
+```java
+public class BookService {
+
+    public void update() {
+        System.out.println("service............");
+    }
+
+}
+```
+
+接着创建对象，使用配置文件实现。
+
+````xml
+<bean id="bookService" class="cn.itcast.xmlanno.BookService"></bean>
+<bean id="bookDao" class="cn.itcast.xmlanno.BookDao"></bean>
+<bean id="personDao" class="cn.itcast.xmlanno.PersonDao"></bean>
+````
+
+也有人说创建对象，能用注解就用注解，而不要写上面这种乱七八糟的东西。我觉得也蛮有道理的。 
+然后在BookService类里面注入BookDao类以及PersonDao类的对象，使用注解方式。
+
+```java
+public class BookService {
+
+    @Resource(name="bookDao")
+    private BookDao bookDao;
+
+    @Resource(name="personDao")
+    private PersonDao personDao;
+
+    public void update() {
+        System.out.println("service............");
+        bookDao.update();
+        personDao.update();
+    }
+
+}
+```
+
+**注意，不要忘了开启注解的扫描：**
+
+```xml
+<context:component-scan base-package="cn.itcast"></context:component-scan>
+```
+
+最后再在cn.itcast.xmlanno包下编写一个TestDemo单元测试类。
+
+```java
+public class TestDemo {
+
+    @Test
+    public void testBook() {
+        ApplicationContext context = new ClassPathXmlApplicationContext("bean3.xml");
+        BookService bookService = (BookService) context.getBean("bookService");
+        bookService.update();
+    }
+}
+```
+
+
+
+
+
+## Spring使用AspectJ进行AOP的开发：注解方式
+
+创建一个Web项目， 引入相关的jar包。
+
+引入Spring的配置文件。主要引入AOP的约束：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop" xsi:schemaLocation="
+        http://www.springframework.org/schema/beans 
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop 
+        http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+</beans>
+```
+
+编写目标类。 
+在Web项目的src目录下创建一个cn.itcast.aop包，并在该包下编写一个Book类：
+
+```
+public class Book {
+
+    public void add() {
+        System.out.println("book add.................");
+    }
+
+}
+```
+
+编写切面类。 
+再在cn.itcast.aop包下编写一个MyBook增强类：
+
+```
+public class MyBook {
+
+    public void before1() {
+        System.out.println("before........");
+    }
+
+}
+```
+
+- 在增强的类上面使用`@Aspect`注解
+
+  ```
+  @Aspect
+  public class MyBook {
+
+      public void before1() {
+          System.out.println("before........");
+      }
+
+  }
+  ```
+
+- 在增强类的方法里面，使用注解配置通知类型：
+
+  ```
+  @Aspect
+  public class MyBook {
+
+      // 前置通知
+      // *：方法的访问修饰符，也可写为execution(public void cn.itcast.aop.Book.*(..))，但一般都不会用
+      @Before("execution(* cn.itcast.aop.Book.*(..))")
+      public void before1() {
+          System.out.println("before........");
+      }
+
+  }
+  ```
+
+AspectJ的AOP的注解：
+
+- `@Aspect`：定义切面类的注解
+- `@Before`：前置通知，相当于BeforeAdvice
+- `@AfterReturning`：后置通知，相当于AfterReturningAdvice
+- `@Around`：环绕通知，相当于MethodInterceptor
+- `@AfterThrowing`：抛出通知，相当于ThrowAdvice
+- `@After`：最终final通知，不管是否异常，该通知都会执行
+- `@Pointcut`：定义切入点的注解
+
+开启AspectJ的注解
+
+```
+<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+```
+
+创建Book类和MyBook类的两个对象(使用配置文件)
+
+```
+<bean id="book" class="cn.itcast.aop.Book"></bean>
+<bean id="myBook" class="cn.itcast.aop.MyBook"></bean>
+```
+
+最后在cn.itcast.aop包下编写一个TestDemo单元测试类
+
+```
+public class TestDemo {
+
+    @Test
+    public void testBook() {
+        ApplicationContext context = new ClassPathXmlApplicationContext("bean1.xml");
+        Book book = (Book) context.getBean("book");
+        book.add();
+    }
+}
+```
+
+## Spring的JDBC模板
+
+Spring是一个分层的JavaSE/EEfull-stack(一站式)轻量级开源框架。在dao层，Spring提供了JDBC模板的技术，可对数据库进行CRUD操作。
+
+Spring框架对不同的持久层技术做了封装，如对传统的JDBC使用JdbcTemplate进行了封装，对Hibernate框架使用HibernateTemplate进行了封装。JdbcTemplate对JDBC进行了简单封装，使用类似于dbutils，但是使用并没有dbutils方便，只是提供了一种实现的方式而已。下面来演示使用JdbcTemplate模板类实现CRUD操作。
+
+### 使用JdbcTemplate模板类实现CRUD操作
+
+使用JdbcTemplate模板类还须导入jar包，先引入JdbcTemplate的jar包： 
+
+spring-jdbc-4.2.4.RELEASE.jar
+
+spring-tx-4.2.4.RELEASE.jar
+
+但我们要知道spring-jdbc-4.2.4.RELEASE.jar包才是最主要的。除此之外还须导入MySQL数据库驱动的jar包。
+
+### 添加操作
+
+在src目录下创建一个cn.itcast.jdbcTemplate包，并在该包下编写一个JdbcTemplateDemo1单元测试类。现在要编写一个add方法来测试添加操作。
+
+public class JdbcTemplateDemo1 {
+
+    // 1.添加操作
+    @Test
+    public void add() {
+        // 1.设置数据库相关信息(JDBC模板依赖连接池获得数据库连接，所以必须先构造连接池)
+        DriverManagerDataSource dataSource = new DriverManagerDataSource(); // 数据源
+        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+        dataSource.setUrl("jdbc:mysql:///spring_lee");
+        dataSource.setUsername("root");
+        dataSource.setPassword("yezi");
+    
+        // 2.做添加的操作
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String sql = "insert into user values(?,?)";
+        int rows = jdbcTemplate.update(sql, "liayun", "lee");
+        System.out.println(rows);
+    }
+
+}
+注意：JDBC模板依赖连接池获得数据库连接，所以必须先构造连接池，然后再创建JdbcTemplate模板类对象。而且还须用到JdbcTemplate模板类的update方法： 
+
+### 修改操作
+
+现在要在单元测试类中编写一个update方法来测试修改操作。
+
+public class JdbcTemplateDemo1 {
+
+    // 2.修改操作
+    @Test
+    public void update() {
+        // 1.设置数据库相关信息
+        DriverManagerDataSource dataSource = new DriverManagerDataSource(); // 数据源
+        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+        dataSource.setUrl("jdbc:mysql:///spring_lee");
+        dataSource.setUsername("root");
+        dataSource.setPassword("yezi");
+    
+        // 实现修改操作
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String sql = "update user set password=? where username=?";
+        int rows = jdbcTemplate.update(sql, "9999", "liayun");
+        System.out.println(rows);
+    }
+
+}
+
+### 删除操作
+
+现在要在单元测试类中编写一个delete方法来测试删除操作。
+
+public class JdbcTemplateDemo1 {
+
+    // 3.删除操作
+    @Test
+    public void delete() {
+        // 1.设置数据库相关信息
+        DriverManagerDataSource dataSource = new DriverManagerDataSource(); // 数据源
+        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+        dataSource.setUrl("jdbc:mysql:///spring_lee");
+        dataSource.setUsername("root");
+        dataSource.setPassword("yezi");
+    
+        // 实现删除操作
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        String sql = "delete from user where username=?";
+        int rows = jdbcTemplate.update(sql, "liayun");
+        System.out.println(rows);
+    }
+
+}
+查询操作
+查询表中的记录数
+现在要在单元测试类中编写一个testCount方法来测试查询表中记录数的操作。
+
+public class JdbcTemplateDemo1 {
+
+    // 查询表记录数
+    @Test
+    public void testCount() {
+        // 1.设置数据库相关信息
+        DriverManagerDataSource dataSource = new DriverManagerDataSource(); // 数据源
+        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+        dataSource.setUrl("jdbc:mysql:///spring_lee");
+        dataSource.setUsername("root");
+        dataSource.setPassword("yezi");
+    
+        // 2.创建JdbcTemplate模板类的对象
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        // 3.sql语句
+        String sql = "select count(*) from user";
+        // 4.调用JdbcTemplate模板类里面的方法
+        // 返回int类型
+        int count = jdbcTemplate.queryForObject(sql, Integer.class);
+        System.out.println(count);
+    }
+
+}
+
+
+
+### **最原始jdbc**
+
+好了，接下来复习一下编写JDBC最原始的代码做查询操作，基本功不要忘记了啊！ 
+首先在cn.itcast.jdbcTemplate包下编写一个User类。
+
+```java
+public class User {
+
+    private String username;
+    private String password;
+    public String getUsername() {
+        return username;
+    }
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    public String getPassword() {
+        return password;
+    }
+    public void setPassword(String password) {
+        this.password = password;
+    }
+    @Override
+    public String toString() {
+        return "User [username=" + username + ", password=" + password + "]";
+    }
+
+}
+```
+
+然后再在该包下编写一个JdbcTemplateDemo2单元测试类，编写JDBC最原始的代码做查询操作。
+
+```java
+public class JdbcTemplateDemo2 {
+
+    // jdbc最原始的代码做查询操作
+    @Test
+    public void testJDBC() {
+        Connection conn = null;
+        PreparedStatement psmt = null;
+        ResultSet rs = null;
+
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql:///spring_lee", "root", "yezi");
+            String sql = "select * from user where username=?";
+            // 对sql进行预编译操作
+            psmt = conn.prepareStatement(sql);
+            psmt.setString(1, "mary");
+            // 执行sql
+            rs = psmt.executeQuery();
+            // 遍历结果
+            while (rs.next()) {
+                String username = rs.getString("username");
+                String password = rs.getString("password");
+
+                User user = new User();
+                user.setUsername(username);
+                user.setPassword(password);
+                System.out.println(user);
+            }
+        } catch (Exception e) {
+
+        } finally {
+            try {
+                rs.close();
+                psmt.close();
+                conn.close();
+            } catch (Exception e2) {
+
+            }
+        }
+    }       
+
+}
+```
+
+## Spring配置连接池
+
+在实际开发中，一般都会用Spring配置C3P0连接池，所以下面我就来重点介绍在Spring中如何配置C3P0连接池。 
+首先引入Spring的配置文件，主要是引入约束：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+</beans>
+```
+
+接着导入Spring的基本jar包，除此之外，还要导入C3P0的jar包：
+
+在Spring配置文件(bean2.xml)中配置C3P0连接池了，即在Spring配置文件中添加如下配置：
+
+```xml
+<!-- 配置C3P0连接池 -->
+<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+    <property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+    <property name="jdbcUrl" value="jdbc:mysql:///spring_lee"></property>
+    <property name="user" value="root"></property>
+    <property name="password" value="yezi"></property>
+</bean>
+```
+
+
+
+
+
+现在举例来演示如何在Spring中配置C3P0连接池了。我的思路是这样的：**创建一个UserService类和一个UserDao类，然后在UserService类里面调用UserDao类的方法，在UserDao类中使用JdbcTemplate模板类进行数据库CRUD操作，并且用上C3P0连接池**。
+
+先在src目录下创建一个cn.itcast.c3p0包，并在该包下编写一个UserDao类。
+
+public class UserDao {
+
+    // 在Dao里面要得到JdbcTemplate对象
+    private JdbcTemplate jdbcTemplate;
+    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+    
+    // 添加操作，使用JdbcTemplate模板来实现添加
+    public void add() {
+        String sql = "insert into user values(?,?)";
+        jdbcTemplate.update(sql, "李阿昀", "lee");
+    }
+}
+再在该包下编写一个UserService类，并在UserService类里面调用UserDao类的add方法。
+
+public class UserService {
+
+    private UserDao userDao;
+    public void setUserDao(UserDao userDao) {
+        this.userDao = userDao;
+    }
+    
+    public void add() {
+        userDao.add();
+    }
+}
+
+那么Spring核心配置文件就应该像下面这样配置：
+
+```xml
+<!-- 配置service和dao以及它们的注入 -->
+<bean id="userService" class="cn.itcast.c3p0.UserService">
+    <property name="userDao" ref="userDao"></property>
+</bean>
+<bean id="userDao" class="cn.itcast.c3p0.UserDao">
+    <property name="jdbcTemplate" ref="jdbcTemplate"></property>
+</bean>
+
+<!-- 配置JdbcTemplate模板类的对象 -->
+<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+    <!-- 注入dataSource，因为在其源代码中dataSource属性有其对应的set方法，故可直接注入 -->
+    <property name="dataSource" ref="dataSource"></property>
+</bean>
+```
+
+从上面的配置可看出：UserDao中注入了JdbcTemplate对象，JdbcTemplate对象里面又注入了dataSource。 
+最后再在该包下编写一个TestDemo单元测试类。
+
+```
+public class TestDemo {
+
+    @Test
+    public void testBook() {
+        ApplicationContext context = new ClassPathXmlApplicationContext("bean2.xml");
+        UserService userService = (UserService) context.getBean("userService");
+        userService.add();
+    }
+}
+```
+
+
+
+
+
+## Spring中的事务操作
+
+### 什么是事务
+
+事务是逻辑上的一组操作，组成这组操作的各个逻辑单元，**要么一起成功，要么一起失败**。
+
+### 事务的特性
+
+原子性：强调事务的不可分割。
+一致性：事务的执行的前后数据的完整性保持一致。
+隔离性：一个事务执行的过程中，不应该受到其他事务的干扰。
+持久性：事务一旦结束，数据就持久化到数据库。
+
+```doc
+如果不考虑隔离性会引发的安全性问题
+脏读：一个事务读到了另一个事务的未提交的数据。
+不可重复读：一个事务读到了另一个事务已经提交的update的数据，导致多次查询的结果不一致。
+虚读：一个事务读到了另一个事务已经提交的insert的数据，导致多次查询的结果不一致。
+解决读问题：设置事务的隔离级别
+未提交读：脏读、不可重复读和虚读都有可能发生。
+已提交读：避免脏读，但是不可重复读和虚读有可能发生。
+可重复读：避免脏读和不可重复读，但是虚读有可能发生。
+串行化的：避免以上所有读问题。 
+mysql数据库的默认隔离级别就是可重复读。
+```
+
+# Spring进行事务操作常用的API
+
+## PlatformTransactionManager：平台事务管理器
+
+Spring进行事务操作时候，主要使用一个PlatformTransactionManager接口，它表示事务管理器，即真正管理事务的对象。 
+Spring针对不同的持久化框架，提供了不同PlatformTransactionManager接口的实现类
+
+```doc
+TrancactionDefinition：事务定义信息
+事务定义信息有：
+
+隔离级别
+传播行为
+超时信息
+是否只读
+TrancactionStatus：事务的状态
+记录事务的状态。
+
+Spring的这组接口是如何进行事务管理的
+平台事务管理器根据事务定义的信息进行事务的管理，事务管理的过程中产生一些状态，将这些状态记录到TrancactionStatus里面。
+
+事务的传播行为
+PROPAGION_XXX：事务的传播行为。
+
+保证在同一个事务中 
+PROPAGION_REQUIRED：支持当前事务，如果不存在，就新建一个(默认) 
+PROPAGION_SUPPORTS：支持当前事务，如果不存在，就不使用事务 
+PROPAGION_MANDATORY：支持当前事务，如果不存在，就抛出异常
+
+保证没有在同一个事务中 
+PROPAGION_REQUIRES_NEW：如果有事务存在，挂起当前事务，创建一个新的事务 
+PROPAGION_NOT_SUPPORTED：以非事务方式运行，如果有事务存在，挂起当前事务 
+PROPAGION_NEVER：以非事务方式运行，如果有事务存在，抛出异常 
+PROPAGION_NESTED：如果当前事务存在，则嵌套事务执行
+
+关于事务的传播行为，我真的是一点都不了解啊！希望随着时间的推移，能够真心明白。
+```
+
+## Spring的声明式事务管理方式
+
+Spring进行声明式事务配置的方式有两种：
+
+1. 基于xml配置文件方式
+2. 基于注解方式
+
+这两种方式我都会讲解，但无论使用什么方式进行Spring的事务操作，首先要配置一个事务管理器。
+
+# 搭建转账的环境
+
+```doc
+现在我举例来演示Spring如何进行声明式事务的配置。例子就是模拟银行转账，首先要搭建好转账的环境。 
+第一步，创建数据库表。
+
+DROP TABLE IF EXISTS `account`;
+CREATE TABLE `account` (
+  `id` int(11) DEFAULT NULL,
+  `username` varchar(100) DEFAULT NULL,
+  `salary` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `account` VALUES ('1', '小郑', '10000');
+INSERT INTO `account` VALUES ('2', '小谭', '10000');
+第二步，创建一个Web项目，并引入Spring的相关jar包。 
+
+第三步，创建业务层和DAO层的类。 
+在Web项目的src目录下创建一个cn.itcast.tx包，并在该包下编写业务层和DAO层的类。
+
+业务层——BookService.java
+
+public class BookService {
+
+    private BookDao bookDao;
+
+    public void setBookDao(BookDao bookDao) {
+        this.bookDao = bookDao;
+    }
+
+}
+DAO层——BookDao.java
+
+public class BookDao {
+
+    private JdbcTemplate jdbcTemplate;
+
+    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+}
+第四步，配置业务层和DAO层的类。
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!-- 配置C3P0连接池 -->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+        <property name="jdbcUrl" value="jdbc:mysql:///spring_lee"></property>
+        <property name="user" value="root"></property>
+        <property name="password" value="yezi"></property>
+    </bean>
+
+    <!-- 创建service和dao的对象 -->
+    <bean id="bookService" class="cn.itcast.tx.BookService">
+        <!-- 注入dao -->
+        <property name="bookDao" ref="bookDao"></property>
+    </bean>
+    <bean id="bookDao" class="cn.itcast.tx.BookDao">
+        <!-- 注入JdbcTemplate模板类的对象 -->
+        <property name="jdbcTemplate" ref="jdbcTemplate"></property>
+    </bean>
+
+    <!-- 创建JdbcTemplate模板类的对象 -->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <!-- 注入dataSource -->
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+</beans>
+第五步，转账的具体实现，实现小郑转账1000元给小谭。 
+JavaEE中DAO层做的事情主要是对数据库进行操作，在DAO层里面一般不写业务操作，一般写单独操作数据库的方法。所以BookDao类的代码要修改为：
+
+public class BookDao {
+
+    private JdbcTemplate jdbcTemplate;
+
+    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    // 小郑少1000
+    public void lessMoney() {
+        String sql = "update account set salary=salary-? where username=?";
+        jdbcTemplate.update(sql, 1000, "小郑");
+    }
+
+    // 小谭多1000
+    public void moreMoney() {
+        String sql = "update account set salary=salary+? where username=?";
+        jdbcTemplate.update(sql, 1000, "小谭");
+    }
+}
+JavaEE中Service层写具体的业务操作，所以BookService类的代码要修改为：
+
+public class BookService {
+
+    private BookDao bookDao;
+
+    public void setBookDao(BookDao bookDao) {
+        this.bookDao = bookDao;
+    }
+
+    // 转账的业务
+    public void accountMoney() {
+        // 1.小郑少1000
+        bookDao.lessMoney();
+
+        // 2.小谭多1000
+        bookDao.moreMoney();
+    }
+}
+第六步，编写一个测试类。 
+在cn.itcast.tx包下编写一个TestDemo单元测试类。
+
+public class TestDemo {
+
+    @Test
+    public void testAccount() {
+        ApplicationContext context = new ClassPathXmlApplicationContext("bean1.xml");
+        BookService bookService = (BookService) context.getBean("bookService");
+        bookService.accountMoney();
+    }
+}
+测试以上方法即可实现小郑转账1000元给小谭。现在我来演示一个问题，在BookService类中调用BookDao类的两个方法构成了转账业务，但是如果小郑少了1000元之后，这时突然出现异常，比如银行断电，就会出现小郑的钱少了，而小谭的钱没有多，钱丢失了的情况。
+
+public class BookService {
+
+    private BookDao bookDao;
+
+    public void setBookDao(BookDao bookDao) {
+        this.bookDao = bookDao;
+    }
+
+    // 转账的业务
+    public void accountMoney() {
+        // 1.小郑少1000
+        bookDao.lessMoney();
+
+        int x = 10 / 0; // 模拟银行断电的情况(出现的异常)
+
+        // 2.小谭多1000
+        bookDao.moreMoney();
+    }
+}
+```
+
+这时应该怎么解决这个问题呢？就可使用事务来解决。Spring中进行事务的操作主要有两种方式：
+
+1. 第一种：编程式事务管理(这种了解就行，不用掌握)
+2. **第二种：声明式事务管理** 
+   **基于xml配置文件方式****基于注解方式**
+
+## Spring的声明式事务管理——XML方式：思想就是AOP
+
+基于xml配置文件的方式来进行声明式事务的操作，不需要进行手动编写代码，通过一段配置完成事务管理。下面我在搭建好的转账环境下演示它。 
+第一步，配置事务管理器。 
+之前，我就讲过Spring针对不同的持久化框架，提供了不同PlatformTransactionManager接口的实现类，如下：
+
+```doc
+所以我们需要在Spring的配置文件中添加如下配置：
+
+<!-- 1.配置事务的管理器 -->
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <!-- 指定要对哪个数据库进行事务操作 -->
+    <property name="dataSource" ref="dataSource"></property>
+</bean>
+第二步，配置事务的增强，即指定对哪个事务管理器进行增强。故需要向Spring的配置文件中添加如下配置：
+
+<!-- 2.配置事务的增强，指定对哪个事务管理器进行增强 -->
+<tx:advice id="txadvice" transaction-manager="transactionManager">
+    <tx:attributes>
+        <!--
+            表示来配置你要增强的方法的匹配的一个规则，
+            注意：只须改方法的命名规则，其他都是固定的！
+            propagation：事务的传播行为。
+        -->
+        <tx:method name="account*" propagation="REQUIRED"></tx:method>
+        <!-- <tx:method name="insert*" propagation="REQUIRED"></tx:method> -->
+    </tx:attributes>
+</tx:advice>
+第三步，配置切入点和切面。这步须向Spring的配置文件中添加如下配置：
+
+<!-- 3.配置切入点和切面(最重要的一步) -->
+<aop:config>
+    <!-- 切入点 -->
+    <aop:pointcut expression="execution(* cn.itcast.tx.BookService.*(..))" id="pointcut1"/>
+    <!-- 切面，即表示把哪个增强用在哪个切入点上 -->
+    <aop:advisor advice-ref="txadvice" pointcut-ref="pointcut1"/>
+</aop:config>
+这时测试TestDemo单元测试类的testAccount方法即可。
+```
+
+
+
+## Spring的声明式事务的注解方式
+
+```doc
+基于注解方式来进行声明式事务的操作会更加简单，在实际开发中我们也会用的比较多。下面我在搭建好的转账环境下演示它。 
+第一步，配置事务管理器。
+
+<!-- 1.配置事务管理器 -->
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="dataSource"></property>
+</bean>
+第二步，开启事务注解。
+
+<!-- 2.开启事务的注解 -->
+<tx:annotation-driven transaction-manager="transactionManager"></tx:annotation-driven>
+以上配置添加完毕之后，Spring核心配置文件的内容就为：
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!-- 配置C3P0连接池 -->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+        <property name="jdbcUrl" value="jdbc:mysql:///spring_lee"></property>
+        <property name="user" value="root"></property>
+        <property name="password" value="yezi"></property>
+    </bean>
+
+    <!-- 1.配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!-- 2.开启事务的注解 -->
+    <tx:annotation-driven transaction-manager="transactionManager"></tx:annotation-driven>
+
+    <!-- 创建service和dao的对象 -->
+    <bean id="bookService" class="cn.itcast.tx.BookService">
+        <!-- 注入dao -->
+        <property name="bookDao" ref="bookDao"></property>
+    </bean>
+    <bean id="bookDao" class="cn.itcast.tx.BookDao">
+        <!-- 注入JdbcTemplate模板类的对象 -->
+        <property name="jdbcTemplate" ref="jdbcTemplate"></property>
+    </bean>
+
+    <!-- 创建JdbcTemplate模板类的对象 -->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <!-- 注入dataSource -->
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+</beans>
+第三步，在具体使用事务的方法所在的类上面添加注解：@Transactional。即BookService类应修改为：
+
+@Transactional
+public class BookService {
+
+    private BookDao bookDao;
+
+    public void setBookDao(BookDao bookDao) {
+        this.bookDao = bookDao;
+    }
+
+    // 转账的业务
+    public void accountMoney() {
+        // 1.小郑少1000
+        bookDao.lessMoney();
+
+        int x = 10 / 0; // 模拟银行断电的情况(出现的异常)
+
+        // 2.小谭多1000
+        bookDao.moreMoney();
+    }
+}
+```
+
+
+
+
+
+## Oracle
+
+### 1.oracle dmp文件导入
+
+注意：impdp命令在cmd下直接用，不必登录oracle。只能导入expdp导出的dmp文件。
+
+expdp导出的时候，需要创建 DIRECTORY
+
+导出什么表空间，导入也要什么表空间。
+
+导出什么用户，导入也要什么用户。
+
+如果没有要新建。
+
+例：
+
+```doc
+从杭州服务器expdp导出了TOOLBOX用户的数据库dmp文件，要导入宁波本地开发环境中。
+
+宁波本地oracle环境是全新的（windows环境）。
+
+
+
+创建表空间
+
+create tablespace TOOLBOX
+logging
+datafile 'C:\oraclexe\app\oracle\oradata\XE\TOOLBOX.dbf'
+size 50m
+autoextend on
+next 32m maxsize unlimited
+extent management local;
+
+创建用户，赋予权限
+create user TOOLBOX identified by 123456;
+alter user TOOLBOX default tablespace TOOLBOX;
+grant CREATE ANY DIRECTORY,create session,create table,create view,unlimited tablespace to TOOLBOX;
+
+登录ToolBox用户
+
+创建DIRECTORY
+
+CREATE OR REPLACE DIRECTORY 
+DMPDIR AS  'c:\'; 
+
+
+
+编写导入impdp语句
+
+impdp toolbox/123456 DIRECTORY=DMPDIRDUMPFILE=hz_toolbox_20160613.dmp full=y
+```
+
+
+
+实际运用
+
+```doc
+oracle dmp文件导入
+使用 SQL Plus 工具
+
+创建表空间（要和导出来的表空间一样的名字）
+create tablespace APPA datafile 'D:\Arvin\oraspace\appa.dbf' size 4000M;
+
+创建用户
+create user zwj identified by zwj;
+
+授权用户
+grant connect,resource,dba to zwj;
+
+给用户分配表空间
+alter user zwj default tablespace APPA;
+
+alter user zwj quota unlimited on APPD;
+
+创建目录 (用来做为dmp文件存储的地方)
+create or replace directory dp_dir as 'D:\dmparea';
+
+
+进入DOS窗口
+
+impdp zwj/zwj@orcl directory=dp_dir dumpfile=eastday.dmp logfile=emp.log full=y;
+impdp eastdaybar/eastdaybar@eastday directory=eastdaydata dumpfile=eastday.dmp
+
+
+
+
+
+--删除用户
+drop user 用户名称 cascade;
+--删除表空间
+drop tablespace 表空间名称 including contents and datafiles cascade constraint;
+
+select * from all_users;  查看你能管理的所有用户！
+
+1.查看sql数据库中的所有表空间的信息：
+
+       select * from dba_data_files
+	   
+	   
+方法一：增加数据文件alter tablespace h2_busi add datafile \'E:\\H2DATA\\H2_BUSI_1.DBF\' size 500M autoextend on next 10M maxsize unlimited;
+	   
+方法二：修改数据文件大小为自增且无限大
+ALTER DATABASE datafile 'D:\Arvin\oraspace\H2_BUSI.DBF' autoextend ON NEXT 10m maxsize unlimited;
+```
+
+### 2.创建100G表空间
+
+```doc
+CREATE BIGFILE TABLESPACE APPD
+datafile 'e:\appd.dbf'  size 100000M Autoextend on;
+```
+
+
+
+
+
+
+
 ## JAVA
 
 #### 1.类型转换
@@ -45,7 +2719,7 @@ BeanUtils提供对Java反射和自省API的包装。其主要目的是利用反�
 
 ```
 
-
+### 加密 MD5   SHA  加盐
 
 
 
@@ -58,9 +2732,17 @@ BeanUtils提供对Java反射和自省API的包装。其主要目的是利用反�
 解决：ip冲突了，禁用无线网络即可。
 ```
 
+### 2.PL/SQL register
+
+```doc
+版本：12.0.7.1837  (64 bit)
+
+product code： 4vkjwhfeh3ufnqnmpr9brvcuyujrx3n3le 
+serial Number：226959 
+password: xs374ca
+```
 
 
-2018/3/28   星期三     晴
 
 ### 获取request
 
@@ -171,9 +2853,13 @@ java -version
 
 
 
+### https ssl 
 
+cmd进入dos窗口输入
 
+生成 keystore
 
+ keytool  -genkey    -keystore   "d:\mykey.keystore"     -alias   localhost    -keyalg   RSA 
 
 
 
@@ -242,6 +2928,40 @@ git push -u origin master    //关联后,第一次推送master分支的所有内
 
 
 ```
+
+## PowerDesigner(数据库建模工具)
+
+https://www.cnblogs.com/biehongli/p/6025954.html
+
+
+
+概念模型(CDM Conceptual Data Model)
+
+物理模型（PDM,Physical Data Model）
+
+面向对象的模型（OOM Objcet Oriented Model）
+
+业务模型（BPM Business Process Model）
+
+
+
+Name: 实体名字一般为中文如论坛用户
+
+Code: 实体代号,一般用英文如XXXUser
+
+Comment:注释对此实体详细说明。
+
+Code属性代号一般用英文UID DataType
+
+Domain域表示属性取值范围如可以创建10个字符的地址域 
+
+M:Mandatory强制属性，表示该属性必填。不能为空
+
+P:Primary Identifer是否是主标识符，表示实体店唯一标识符
+
+D:Displayed显示出来，默认全部勾选
+
+
 
 ## Exception
 
@@ -3889,7 +6609,7 @@ credentials：证明/凭证，即只有主体知道的安全值，如密码/数�
 
 ## Redis
 
-## Oracle
+## 
 
 ## Mongodb
 
